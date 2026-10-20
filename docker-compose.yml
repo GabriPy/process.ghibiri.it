@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  ghibiri-hub:
+    build: .
+    container_name: ghibiri-hub
+    restart: unless-stopped
+    ports:
+      - "3111:3111"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3111
