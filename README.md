@@ -26,7 +26,7 @@ Card con pallino di stato live, categorie colorate e gestione completa da interf
 ## ✨ Anteprima
 
 <p align="center">
-  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=dark%20mode%20homelab%20dashboard%20UI%20mockup%2C%20deep%20navy%20background%2C%20glassmorphism%20cards%20with%20server%20icons%2C%20neon%20indigo%20accents%2C%20glowing%20green%20and%20red%20status%20dots%2C%20modern%20minimal%20flat%20illustration%2C%20soft%20shadows%2C%20premium%20tech%20aesthetic%2C%20no%20text&image_size=landscape_16_9" width="90%" alt="Anteprima UI" />
+  <img src="docs/preview.svg" width="90%" alt="Anteprima UI" />
 </p>
 
 <p align="center"><sub>Mockup illustrativo dell'interfaccia in tema scuro.</sub></p>
@@ -136,6 +136,8 @@ process.ghibiri.it/
 │   ├── index.html         # Dashboard (viste, sezioni, modali, stato live)
 │   └── default-icon.svg   # Icona di fallback
 ├── data/                  # Volume Docker con services.db (ignorato da git)
+├── docs/
+│   └── preview.svg        # Anteprima animata usata in questo README
 ├── Dockerfile
 ├── docker-compose.yml
 └── package.json

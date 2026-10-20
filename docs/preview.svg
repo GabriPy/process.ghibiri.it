@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img" aria-label="Mockup della dashboard Ghibiri Hub">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0f19"/>
+      <stop offset="1" stop-color="#0e1424"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a5b4fc"/>
+      <stop offset=".55" stop-color="#818cf8"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#6366f1" stop-opacity=".40"/>
+      <stop offset="1" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#ec4899" stop-opacity=".26"/>
+      <stop offset="1" stop-color="#ec4899" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b0f19" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0b0f19" stop-opacity=".95"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="170%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity=".35"/>
+    </filter>
+    <style>
+      .f { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .pulse { animation: pulse 2s ease-in-out infinite; }
+      .pulse-slow { animation: pulse 2.6s ease-in-out infinite; }
+      @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .3 } }
+      .card { animation: rise .7s cubic-bezier(.22,.61,.36,1) both; }
+      @keyframes rise { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: translateY(0) } }
+      .d1 { animation-delay: .05s } .d2 { animation-delay: .13s } .d3 { animation-delay: .21s }
+      .d4 { animation-delay: .29s } .d5 { animation-delay: .37s } .d6 { animation-delay: .45s }
+      .ambient { animation: ambient 7s ease-in-out infinite; }
+      @keyframes ambient { 0%,100% { opacity: .75 } 50% { opacity: 1 } }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <circle class="ambient" cx="170" cy="70" r="300" fill="url(#glow1)"/>
+  <circle class="ambient" cx="1080" cy="600" r="320" fill="url(#glow2)"/>
+
+  <!-- Header -->
+  <text class="f" x="48" y="47" font-size="26" font-weight="700" fill="url(#title)">Ghibiri Hub</text>
+  <rect x="878" y="20" width="124" height="34" rx="17" fill="#6366f1" opacity=".16"/>
+  <text class="f" x="940" y="42" font-size="14" font-weight="600" fill="#a5b4fc" text-anchor="middle">Dashboard</text>
+  <text class="f" x="1064" y="42" font-size="14" font-weight="600" fill="#8b9cb8" text-anchor="middle">Categorie</text>
+  <line x1="0" y1="72" x2="1200" y2="72" stroke="#1b2437" stroke-width="1"/>
+
+  <!-- Toolbar -->
+  <rect x="48" y="94" width="380" height="42" rx="13" fill="#131a2a" stroke="#1f2a44"/>
+  <circle cx="74" cy="115" r="7" fill="none" stroke="#64748b" stroke-width="2.5"/>
+  <line x1="79" y1="120" x2="85" y2="126" stroke="#64748b" stroke-width="2.5" stroke-linecap="round"/>
+  <text class="f" x="100" y="121" font-size="14" fill="#64748b">Cerca un servizio…</text>
+
+  <rect x="452" y="94" width="216" height="42" rx="13" fill="#131a2a" stroke="#1f2a44"/>
+  <rect x="457" y="99" width="106" height="32" rx="9" fill="#6366f1"/>
+  <text class="f" x="510" y="120" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">Per categoria</text>
+  <text class="f" x="614" y="120" font-size="13" font-weight="600" fill="#8b9cb8" text-anchor="middle">A-Z</text>
+
+  <!-- Sezione: Gestione -->
+  <circle cx="54" cy="176" r="6" fill="#6366f1"/>
+  <text class="f" x="74" y="183" font-size="18" font-weight="700" fill="#e8edf7">Gestione</text>
+  <rect x="166" y="164" width="32" height="22" rx="11" fill="#1b2437"/>
+  <text class="f" x="182" y="180" font-size="12" font-weight="600" fill="#94a3b8" text-anchor="middle">3</text>
+
+  <!-- Card 1: Portainer -->
+  <g class="card d1">
+    <rect x="48" y="206" width="360" height="150" rx="18" fill="#131a2a" stroke="#1f2a44" filter="url(#shadow)"/>
+    <rect x="48" y="226" width="5" height="110" rx="2.5" fill="#6366f1"/>
+    <rect x="72" y="230" width="54" height="54" rx="15" fill="#0f1626" stroke="#1f2a44"/>
+    <text class="f" x="99" y="265" font-size="22" font-weight="700" fill="#818cf8" text-anchor="middle">P</text>
+    <circle cx="382" cy="242" r="10" fill="#22c55e" opacity=".18"/>
+    <circle class="pulse" cx="382" cy="242" r="6" fill="#22c55e"/>
+    <text class="f" x="144" y="256" font-size="18" font-weight="700" fill="#e8edf7">Portainer</text>
+    <text class="f" x="144" y="280" font-size="13" fill="#64748b">localhost:9000</text>
+    <rect x="72" y="302" width="96" height="26" rx="13" fill="#6366f1" fill-opacity=".14" stroke="#6366f1" stroke-opacity=".35"/>
+    <text class="f" x="120" y="319" font-size="12" font-weight="600" fill="#a5b4fc" text-anchor="middle">Gestione</text>
+    <circle cx="330" cy="315" r="14" fill="#1b2437"/>
+    <line x1="325" y1="320" x2="335" y2="310" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="368" cy="315" r="14" fill="#1b2437"/>
+    <rect x="362" y="313" width="12" height="11" rx="2" fill="none" stroke="#94a3b8" stroke-width="2"/>
+    <line x1="359" y1="311" x2="377" y2="311" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Card 2: Grafana -->
+  <g class="card d2">
+    <rect x="432" y="206" width="360" height="150" rx="18" fill="#131a2a" stroke="#1f2a44" filter="url(#shadow)"/>
+    <rect x="432" y="226" width="5" height="110" rx="2.5" fill="#6366f1"/>
+    <rect x="456" y="230" width="54" height="54" rx="15" fill="#0f1626" stroke="#1f2a44"/>
+    <text class="f" x="483" y="265" font-size="22" font-weight="700" fill="#818cf8" text-anchor="middle">G</text>
+    <circle cx="766" cy="242" r="10" fill="#22c55e" opacity=".18"/>
+    <circle class="pulse" cx="766" cy="242" r="6" fill="#22c55e"/>
+    <text class="f" x="528" y="256" font-size="18" font-weight="700" fill="#e8edf7">Grafana</text>
+    <text class="f" x="528" y="280" font-size="13" fill="#64748b">localhost:3000</text>
+    <rect x="456" y="302" width="96" height="26" rx="13" fill="#6366f1" fill-opacity=".14" stroke="#6366f1" stroke-opacity=".35"/>
+    <text class="f" x="504" y="319" font-size="12" font-weight="600" fill="#a5b4fc" text-anchor="middle">Gestione</text>
+    <circle cx="714" cy="315" r="14" fill="#1b2437"/>
+    <line x1="709" y1="320" x2="719" y2="310" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="752" cy="315" r="14" fill="#1b2437"/>
+    <rect x="746" y="313" width="12" height="11" rx="2" fill="none" stroke="#94a3b8" stroke-width="2"/>
+    <line x1="743" y1="311" x2="761" y2="311" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Card 3: Uptime Kuma (offline) -->
+  <g class="card d3">
+    <rect x="816" y="206" width="360" height="150" rx="18" fill="#131a2a" stroke="#1f2a44" filter="url(#shadow)"/>
+    <rect x="816" y="226" width="5" height="110" rx="2.5" fill="#6366f1"/>
+    <rect x="840" y="230" width="54" height="54" rx="15" fill="#0f1626" stroke="#1f2a44"/>
+    <text class="f" x="867" y="265" font-size="22" font-weight="700" fill="#818cf8" text-anchor="middle">U</text>
+    <circle cx="1150" cy="242" r="10" fill="#ef4444" opacity=".18"/>
+    <circle class="pulse-slow" cx="1150" cy="242" r="6" fill="#ef4444"/>
+    <text class="f" x="912" y="256" font-size="18" font-weight="700" fill="#e8edf7">Uptime Kuma</text>
+    <text class="f" x="912" y="280" font-size="13" fill="#64748b">localhost:3001</text>
+    <rect x="840" y="302" width="96" height="26" rx="13" fill="#6366f1" fill-opacity=".14" stroke="#6366f1" stroke-opacity=".35"/>
+    <text class="f" x="888" y="319" font-size="12" font-weight="600" fill="#a5b4fc" text-anchor="middle">Gestione</text>
+    <circle cx="1098" cy="315" r="14" fill="#1b2437"/>
+    <line x1="1093" y1="320" x2="1103" y2="310" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="1136" cy="315" r="14" fill="#1b2437"/>
+    <rect x="1130" y="313" width="12" height="11" rx="2" fill="none" stroke="#94a3b8" stroke-width="2"/>
+    <line x1="1127" y1="311" x2="1145" y2="311" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Sezione: Media -->
+  <circle cx="54" cy="396" r="6" fill="#ec4899"/>
+  <text class="f" x="74" y="403" font-size="18" font-weight="700" fill="#e8edf7">Media</text>
+  <rect x="134" y="384" width="32" height="22" rx="11" fill="#1b2437"/>
+  <text class="f" x="150" y="400" font-size="12" font-weight="600" fill="#94a3b8" text-anchor="middle">3</text>
+
+  <!-- Card 4: Jellyfin -->
+  <g class="card d4">
+    <rect x="48" y="428" width="360" height="150" rx="18" fill="#131a2a" stroke="#1f2a44" filter="url(#shadow)"/>
+    <rect x="48" y="448" width="5" height="110" rx="2.5" fill="#ec4899"/>
+    <rect x="72" y="452" width="54" height="54" rx="15" fill="#0f1626" stroke="#1f2a44"/>
+    <text class="f" x="99" y="487" font-size="22" font-weight="700" fill="#f472b6" text-anchor="middle">J</text>
+    <circle cx="382" cy="464" r="10" fill="#22c55e" opacity=".18"/>
+    <circle class="pulse" cx="382" cy="464" r="6" fill="#22c55e"/>
+    <text class="f" x="144" y="478" font-size="18" font-weight="700" fill="#e8edf7">Jellyfin</text>
+    <text class="f" x="144" y="502" font-size="13" fill="#64748b">localhost:8096</text>
+    <rect x="72" y="524" width="78" height="26" rx="13" fill="#ec4899" fill-opacity=".14" stroke="#ec4899" stroke-opacity=".35"/>
+    <text class="f" x="111" y="541" font-size="12" font-weight="600" fill="#f9a8d4" text-anchor="middle">Media</text>
+    <circle cx="330" cy="537" r="14" fill="#1b2437"/>
+    <line x1="325" y1="542" x2="335" y2="532" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="368" cy="537" r="14" fill="#1b2437"/>
+    <rect x="362" y="535" width="12" height="11" rx="2" fill="none" stroke="#94a3b8" stroke-width="2"/>
+    <line x1="359" y1="533" x2="377" y2="533" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Card 5: Immich -->
+  <g class="card d5">
+    <rect x="432" y="428" width="360" height="150" rx="18" fill="#131a2a" stroke="#1f2a44" filter="url(#shadow)"/>
+    <rect x="432" y="448" width="5" height="110" rx="2.5" fill="#ec4899"/>
+    <rect x="456" y="452" width="54" height="54" rx="15" fill="#0f1626" stroke="#1f2a44"/>
+    <text class="f" x="483" y="487" font-size="22" font-weight="700" fill="#f472b6" text-anchor="middle">I</text>
+    <circle cx="766" cy="464" r="10" fill="#22c55e" opacity=".18"/>
+    <circle class="pulse" cx="766" cy="464" r="6" fill="#22c55e"/>
+    <text class="f" x="528" y="478" font-size="18" font-weight="700" fill="#e8edf7">Immich</text>
+    <text class="f" x="528" y="502" font-size="13" fill="#64748b">localhost:2283</text>
+    <rect x="456" y="524" width="78" height="26" rx="13" fill="#ec4899" fill-opacity=".14" stroke="#ec4899" stroke-opacity=".35"/>
+    <text class="f" x="495" y="541" font-size="12" font-weight="600" fill="#f9a8d4" text-anchor="middle">Media</text>
+    <circle cx="714" cy="537" r="14" fill="#1b2437"/>
+    <line x1="709" y1="542" x2="719" y2="532" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="752" cy="537" r="14" fill="#1b2437"/>
+    <rect x="746" y="535" width="12" height="11" rx="2" fill="none" stroke="#94a3b8" stroke-width="2"/>
+    <line x1="743" y1="533" x2="761" y2="533" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Card 6: Paperless (offline) -->
+  <g class="card d6">
+    <rect x="816" y="428" width="360" height="150" rx="18" fill="#131a2a" stroke="#1f2a44" filter="url(#shadow)"/>
+    <rect x="816" y="448" width="5" height="110" rx="2.5" fill="#ec4899"/>
+    <rect x="840" y="452" width="54" height="54" rx="15" fill="#0f1626" stroke="#1f2a44"/>
+    <text class="f" x="867" y="487" font-size="22" font-weight="700" fill="#f472b6" text-anchor="middle">P</text>
+    <circle cx="1150" cy="464" r="10" fill="#ef4444" opacity=".18"/>
+    <circle class="pulse-slow" cx="1150" cy="464" r="6" fill="#ef4444"/>
+    <text class="f" x="912" y="478" font-size="18" font-weight="700" fill="#e8edf7">Paperless</text>
+    <text class="f" x="912" y="502" font-size="13" fill="#64748b">localhost:8000</text>
+    <rect x="840" y="524" width="78" height="26" rx="13" fill="#ec4899" fill-opacity=".14" stroke="#ec4899" stroke-opacity=".35"/>
+    <text class="f" x="879" y="541" font-size="12" font-weight="600" fill="#f9a8d4" text-anchor="middle">Media</text>
+    <circle cx="1098" cy="537" r="14" fill="#1b2437"/>
+    <line x1="1093" y1="542" x2="1103" y2="532" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="1136" cy="537" r="14" fill="#1b2437"/>
+    <rect x="1130" y="535" width="12" height="11" rx="2" fill="none" stroke="#94a3b8" stroke-width="2"/>
+    <line x1="1127" y1="533" x2="1145" y2="533" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <rect x="0" y="596" width="1200" height="79" fill="url(#fade)"/>
+</svg>
