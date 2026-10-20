@@ -26,10 +26,29 @@ Card con pallino di stato live, categorie colorate, domini riutilizzabili e acce
 ## ✨ Anteprima
 
 <p align="center">
-  <img src="docs/preview.svg" width="90%" alt="Anteprima UI" />
+  <img src="docs/preview.svg" width="92%" alt="Dashboard Ghibiri Hub con sezioni per categoria, stato live e drag & drop" />
 </p>
 
-<p align="center"><sub>Mockup illustrativo dell'interfaccia in tema scuro.</sub></p>
+<p align="center"><sub><b>Dashboard</b> · card raggruppate per categoria, pallino di stato live e riordino con drag &amp; drop.</sub></p>
+
+<table align="center">
+  <tr>
+    <td align="center" width="33%">
+      <img src="docs/preview-login.svg" width="100%" alt="Schermata di login con PIN a 4 cifre" />
+      <sub><b>🔐 Login con PIN</b><br/>Sblocco a 4 cifre protetto da cookie firmato.</sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/preview-categorie.svg" width="100%" alt="Pagina di gestione categorie e domini" />
+      <sub><b>🗂️ Categorie e domini</b><br/>Colori, conteggi e domini riutilizzabili.</sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/preview-form.svg" width="100%" alt="Form di creazione servizio con protocollo, nome e dominio" />
+      <sub><b>🌐 Nuovo servizio</b><br/>Protocollo, nome e dominio con anteprima URL.</sub>
+    </td>
+  </tr>
+</table>
+
+<p align="center"><sub>Mockup illustrativi (animati) dell'interfaccia in tema scuro.</sub></p>
 
 ## 🚀 Caratteristiche
 
@@ -178,7 +197,10 @@ process.ghibiri.it/
 │   └── default-icon.svg   # Icona di fallback
 ├── data/                  # Volume Docker con services.db (ignorato da git)
 ├── docs/
-│   └── preview.svg        # Anteprima animata usata in questo README
+│   ├── preview.svg          # Anteprima dashboard (animata)
+│   ├── preview-login.svg    # Anteprima login con PIN
+│   ├── preview-categorie.svg # Anteprima categorie e domini
+│   └── preview-form.svg     # Anteprima form nuovo servizio
 ├── Dockerfile
 ├── docker-compose.yml     # Porta 3111, volume dati, variabile AUTH_PIN
 └── package.json
