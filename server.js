@@ -84,6 +84,27 @@ app.put('/api/services/:id', (req, res) => {
     );
 });
 
+// API: Verifica raggiungibilità di un servizio
+app.get('/api/check', async (req, res) => {
+    const { url } = req.query;
+    if (!url) return res.status(400).json({ error: "URL mancante" });
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    try {
+        try {
+            await fetch(url, { method: 'HEAD', redirect: 'follow', signal: controller.signal });
+        } catch (headErr) {
+            await fetch(url, { method: 'GET', redirect: 'follow', signal: controller.signal });
+        }
+        res.json({ online: true });
+    } catch (err) {
+        res.json({ online: false });
+    } finally {
+        clearTimeout(timeout);
+    }
+});
+
 // API: Elimina servizio
 app.delete('/api/services/:id', (req, res) => {
     const { id } = req.params;
