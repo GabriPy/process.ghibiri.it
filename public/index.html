@@ -36,6 +36,35 @@
 
 <body class="min-h-screen flex flex-col font-sans">
 
+    <!-- Overlay Login PIN -->
+    <div id="loginView" class="hidden fixed inset-0 z-[100] bg-[#0b0f19] flex items-center justify-center p-4">
+        <div class="glass w-full max-w-sm rounded-2xl p-8 shadow-2xl text-center">
+            <div class="mx-auto mb-5 p-3 bg-indigo-600/20 text-indigo-400 rounded-2xl border border-indigo-500/30 w-fit">
+                <i class="fa-solid fa-lock text-2xl"></i>
+            </div>
+            <h2 class="text-xl font-bold tracking-wide">Ghibiri Hub</h2>
+            <p class="text-xs text-gray-400 mb-7">Inserisci il PIN per accedere</p>
+
+            <div id="pinBoxes" class="flex justify-center gap-3 mb-5">
+                <input type="password" inputmode="numeric" maxlength="1" autocomplete="off" data-index="0"
+                    class="pin-box w-12 h-14 bg-gray-900 border border-gray-700 rounded-xl text-center text-2xl font-bold text-white focus:outline-none focus:border-indigo-500">
+                <input type="password" inputmode="numeric" maxlength="1" autocomplete="off" data-index="1"
+                    class="pin-box w-12 h-14 bg-gray-900 border border-gray-700 rounded-xl text-center text-2xl font-bold text-white focus:outline-none focus:border-indigo-500">
+                <input type="password" inputmode="numeric" maxlength="1" autocomplete="off" data-index="2"
+                    class="pin-box w-12 h-14 bg-gray-900 border border-gray-700 rounded-xl text-center text-2xl font-bold text-white focus:outline-none focus:border-indigo-500">
+                <input type="password" inputmode="numeric" maxlength="1" autocomplete="off" data-index="3"
+                    class="pin-box w-12 h-14 bg-gray-900 border border-gray-700 rounded-xl text-center text-2xl font-bold text-white focus:outline-none focus:border-indigo-500">
+            </div>
+
+            <p id="loginError" class="hidden text-xs text-red-400 mb-4"></p>
+
+            <button onclick="submitPin()"
+                class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-3 rounded-xl transition">
+                Accedi
+            </button>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="glass sticky top-0 z-40 px-6 py-4 mb-8 flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3">
@@ -53,9 +82,13 @@
                 <i class="fa-solid fa-table-cells-large text-xs"></i> Dashboard
             </button>
             <button onclick="switchView('tags')" id="navTags">
-                <i class="fa-solid fa-tags text-xs"></i> Categorie
+                <i class="fa-solid fa-tags text-xs"></i> Categorie e domini
             </button>
         </nav>
+
+        <button onclick="logout()" id="logoutBtn" title="Esci" class="hidden p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition">
+            <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
     </header>
 
     <!-- Main Container -->
@@ -92,19 +125,35 @@
             </div>
         </div>
 
-        <!-- Vista Categorie -->
+        <!-- Vista Categorie e domini -->
         <div id="tagsView" class="hidden">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-                <div>
-                    <h2 class="text-lg font-bold">Gestione Categorie</h2>
-                    <p class="text-xs text-gray-400">Crea le categorie e assegna un colore. Ogni servizio può avere una sola categoria.</p>
-                </div>
+            <div class="mb-6">
+                <h2 class="text-lg font-bold">Categorie e domini</h2>
+                <p class="text-xs text-gray-400">Le categorie definiscono colore e raggruppamento; i domini compongono gli URL dei servizi.</p>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-indigo-400">
+                    <i class="fa-solid fa-tags mr-1"></i> Categorie
+                </h3>
                 <button onclick="openCategoryModal()"
                     class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition flex items-center gap-2">
                     <i class="fa-solid fa-plus"></i> Nuova Categoria
                 </button>
             </div>
             <div id="categoriesList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3 mt-10">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-indigo-400">
+                    <i class="fa-solid fa-globe mr-1"></i> Domini
+                </h3>
+                <button onclick="openDomainModal()"
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Nuovo Dominio
+                </button>
+            </div>
+            <p class="text-xs text-gray-400 mb-4">Sono i domini disponibili nella tendina quando crei o modifichi un servizio.</p>
+            <div id="domainsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
         </div>
     </main>
 
@@ -118,15 +167,33 @@
             <form id="serviceForm" onsubmit="saveService(event)" class="space-y-4">
                 <input type="hidden" id="serviceId">
                 <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">PROTOCOLLO</label>
+                    <select id="protocolInput" onchange="updateUrlPreview()"
+                        class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="https">https</option>
+                        <option value="http">http</option>
+                    </select>
+                </div>
+                <div>
                     <label class="block text-xs font-semibold text-gray-400 mb-1">NOME</label>
                     <input type="text" id="nameInput" required placeholder="Es. Portainer"
                         class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 mb-1">URL COMPLETO</label>
-                    <input type="url" id="urlInput" required placeholder="https://portainer.tuodominio.it"
-                        class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 mb-1">SOTTODOMINIO</label>
+                        <input type="text" id="subdomainInput" placeholder="Es. portainer" oninput="updateUrlPreview()"
+                            class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 mb-1">DOMINIO</label>
+                        <select id="domainInput" onchange="updateUrlPreview()"
+                            class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"></select>
+                    </div>
                 </div>
+                <p class="text-[11px] text-gray-500">
+                    URL risultante: <span id="urlPreview" class="text-indigo-300">https://</span>
+                </p>
                 <div>
                     <label class="block text-xs font-semibold text-gray-400 mb-1">URL LOGO (Opzionale)</label>
                     <input type="url" id="logoInput" placeholder="https://link-al-logo.png"
@@ -175,6 +242,30 @@
         </div>
     </div>
 
+    <!-- Modal Aggiungi / Modifica Dominio -->
+    <div id="domainModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass w-full max-w-md rounded-2xl p-6 relative shadow-2xl">
+            <button onclick="closeDomainModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h2 id="domainModalTitle" class="text-lg font-bold mb-4">Nuovo Dominio</h2>
+            <form id="domainForm" onsubmit="saveDomain(event)" class="space-y-4">
+                <input type="hidden" id="domainId">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">DOMINIO</label>
+                    <input type="text" id="domainNameInput" required placeholder="Es. ghibiri.it"
+                        class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeDomainModal()"
+                        class="px-4 py-2 text-sm text-gray-400 hover:text-white">Annulla</button>
+                    <button type="submit"
+                        class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2 rounded-xl transition">Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const PALETTE = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#06b6d4', '#a855f7', '#ef4444', '#14b8a6', '#f97316', '#3b82f6'];
         const UNCATEGORIZED = 'Senza categoria';
@@ -182,8 +273,11 @@
 
         let services = [];
         let categories = [];
+        let domains = [];
         let groupByCategory = true;
         let selectedColor = PALETTE[0];
+        let authRequired = false;
+        let dragEl = null;
 
         function escapeHtml(str) {
             return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -203,9 +297,15 @@
 
         async function loadAll() {
             try {
-                const [sRes, cRes] = await Promise.all([fetch('/api/services'), fetch('/api/categories')]);
+                const [sRes, cRes, dRes] = await Promise.all([
+                    fetch('/api/services'),
+                    fetch('/api/categories'),
+                    fetch('/api/domains')
+                ]);
+                if (sRes.status === 401) return showLogin();
                 services = await sRes.json();
                 categories = await cRes.json();
+                domains = await dRes.json();
                 renderServices();
             } catch (err) {
                 console.error("Errore caricamento dati:", err);
@@ -224,7 +324,10 @@
             document.getElementById('navDashboard').className = isTags ? off : on;
             document.getElementById('navTags').className = isTags ? on : off;
 
-            if (isTags) renderCategories();
+            if (isTags) {
+                renderCategories();
+                renderDomains();
+            }
         }
 
         // --- Ordinamento: raggruppato per categoria oppure alfabetico ---
@@ -248,17 +351,16 @@
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             container.innerHTML = '';
 
-            const filtered = services
-                .filter(s =>
-                    s.name.toLowerCase().includes(query) ||
-                    (s.category && s.category.toLowerCase().includes(query))
-                )
-                .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+            const filtered = services.filter(s =>
+                s.name.toLowerCase().includes(query) ||
+                (s.category && s.category.toLowerCase().includes(query))
+            );
 
             document.getElementById('noResults').classList.toggle('hidden', filtered.length > 0);
 
             if (!groupByCategory) {
-                container.appendChild(buildGrid(filtered));
+                filtered.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+                container.appendChild(buildGrid(filtered, false));
             } else {
                 const groups = new Map();
                 filtered.forEach(s => {
@@ -266,22 +368,34 @@
                     if (!groups.has(key)) groups.set(key, []);
                     groups.get(key).push(s);
                 });
+                // Il trascinamento è attivo solo senza filtro di ricerca, per non alterare le posizioni
+                const canDrag = query === '';
                 [...groups.keys()]
                     .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
-                    .forEach(key => container.appendChild(buildSection(key, groups.get(key))));
+                    .forEach(key => {
+                        const list = groups.get(key).sort(byPosition);
+                        container.appendChild(buildSection(key, list, canDrag));
+                    });
             }
 
             checkStatuses();
         }
 
-        function buildGrid(list) {
+        function byPosition(a, b) {
+            const pa = a.position ?? 0;
+            const pb = b.position ?? 0;
+            return pa - pb || a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+        }
+
+        function buildGrid(list, draggable) {
             const grid = document.createElement('div');
             grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5';
-            list.forEach(s => grid.appendChild(createCard(s)));
+            list.forEach(s => grid.appendChild(createCard(s, draggable)));
+            if (draggable) attachDropZone(grid);
             return grid;
         }
 
-        function buildSection(name, list) {
+        function buildSection(name, list, draggable) {
             const isUncategorized = name === UNCATEGORIZED;
             const color = isUncategorized ? UNCATEGORIZED_COLOR : categoryColor(name);
 
@@ -293,13 +407,14 @@
                 <span class="w-2.5 h-2.5 rounded-full" style="background-color:${color}"></span>
                 <h2 class="text-sm font-bold uppercase tracking-wider" style="color:${color}">${escapeHtml(name)}</h2>
                 <span class="text-xs text-gray-500">· ${list.length}</span>
+                ${draggable ? '<span class="text-[10px] text-gray-600 ml-1"><i class="fa-solid fa-up-down-left-right"></i> trascina per ordinare</span>' : ''}
             `;
             section.appendChild(header);
-            section.appendChild(buildGrid(list));
+            section.appendChild(buildGrid(list, draggable));
             return section;
         }
 
-        function createCard(s) {
+        function createCard(s, draggable = false) {
             const logoSrc = s.logo && s.logo.trim() !== '' ? s.logo : '/default-icon.svg';
             const cat = (s.category && s.category.trim()) ? s.category.trim() : UNCATEGORIZED;
             const color = cat === UNCATEGORIZED ? UNCATEGORIZED_COLOR : categoryColor(cat);
@@ -307,6 +422,8 @@
             const card = document.createElement('div');
             card.className = 'glass-card rounded-2xl p-5 relative group cursor-pointer flex flex-col justify-between';
             card.style.borderLeft = `3px solid ${hexToRgba(color, 0.7)}`;
+            card.dataset.id = s.id;
+            if (draggable) makeDraggable(card);
 
             // Clic sull'intera card apre il servizio
             card.onclick = (e) => {
@@ -318,7 +435,8 @@
             card.innerHTML = `
                 <div class="flex items-start justify-between mb-4">
                     <div class="relative">
-                        <div class="w-12 h-12 rounded-xl bg-gray-800/80 border border-gray-700/50 flex items-center justify-center p-2 overflow-hidden">
+                        <div class="w-12 h-12 rounded-xl border flex items-center justify-center p-2 overflow-hidden"
+                            style="background-color:${hexToRgba(color, 0.18)}; border-color:${hexToRgba(color, 0.4)}">
                             <img src="${escapeHtml(logoSrc)}" alt="${escapeHtml(s.name)}" class="w-full h-full object-contain" onerror="this.src='/default-icon.svg'">
                         </div>
                         <span class="status-dot absolute -top-1 -left-1 w-3 h-3 rounded-full border-2" style="background-color:#6b7280; border-color:#0b0f19" data-url="${escapeHtml(s.url)}"></span>
@@ -343,6 +461,69 @@
             return card;
         }
 
+        // --- Drag and drop delle card (ordine persistente) ---
+        function makeDraggable(card) {
+            card.setAttribute('draggable', 'true');
+            card.classList.add('cursor-grab', 'active:cursor-grabbing');
+            card.addEventListener('dragstart', (e) => {
+                dragEl = card;
+                card.classList.add('opacity-40');
+                e.dataTransfer.effectAllowed = 'move';
+                try { e.dataTransfer.setData('text/plain', String(card.dataset.id)); } catch (_) { }
+            });
+            card.addEventListener('dragend', () => {
+                card.classList.remove('opacity-40');
+                dragEl = null;
+                persistOrder();
+            });
+        }
+
+        function attachDropZone(grid) {
+            grid.addEventListener('dragover', (e) => {
+                if (!dragEl || !grid.contains(dragEl)) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                const after = getDragAfterElement(grid, e.clientX, e.clientY);
+                if (after == null) grid.appendChild(dragEl);
+                else if (after !== dragEl) grid.insertBefore(dragEl, after);
+            });
+            grid.addEventListener('drop', (e) => e.preventDefault());
+        }
+
+        // Determina davanti a quale card va inserito l'elemento trascinato (griglia multi-colonna)
+        function getDragAfterElement(container, x, y) {
+            const cards = [...container.querySelectorAll('[data-id]:not(.opacity-40)')];
+            let closest = { offset: Number.NEGATIVE_INFINITY, el: null };
+            cards.forEach(el => {
+                const box = el.getBoundingClientRect();
+                const offset = (y - (box.top + box.height / 2)) * 1000 + (x - (box.left + box.width / 2));
+                if (offset < 0 && offset > closest.offset) {
+                    closest = { offset, el };
+                }
+            });
+            return closest.el;
+        }
+
+        // Salva l'ordine corrente delle card così come appaiono nel DOM
+        async function persistOrder() {
+            const ids = [...document.querySelectorAll('#servicesContainer [data-id]')].map(c => Number(c.dataset.id));
+            if (ids.length === 0) return;
+            try {
+                const res = await fetch('/api/services/order', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order: ids })
+                });
+                if (!res.ok) throw new Error('Risposta ' + res.status);
+                const positions = new Map(ids.map((id, i) => [id, i]));
+                services.forEach(s => { if (positions.has(s.id)) s.position = positions.get(s.id); });
+            } catch (err) {
+                console.error("Errore salvataggio ordine:", err);
+                alert('Impossibile salvare il nuovo ordine');
+            }
+        }
+
+        // --- Stato raggiungibilità dei servizi ---
         async function checkStatuses() {
             const dots = document.querySelectorAll('.status-dot');
             await Promise.all([...dots].map(async (dot) => {
@@ -465,6 +646,91 @@
             renderCategories();
         }
 
+        // --- Vista Domini ---
+        function renderDomains() {
+            const list = document.getElementById('domainsList');
+            list.innerHTML = '';
+
+            if (domains.length === 0) {
+                list.innerHTML = `<p class="text-sm text-gray-400">Nessun dominio. Aggiungine uno per comporre gli URL dei servizi.</p>`;
+                return;
+            }
+
+            domains.forEach(d => {
+                const count = services.filter(s => (s.url || '').toLowerCase().endsWith('.' + d.name.toLowerCase())).length;
+                const card = document.createElement('div');
+                card.className = 'glass-card rounded-2xl p-5 flex items-center justify-between';
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-9 h-9 shrink-0 rounded-xl border border-indigo-500/40 bg-indigo-500/15 flex items-center justify-center text-indigo-400">
+                            <i class="fa-solid fa-globe text-sm"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <h3 class="text-sm font-semibold text-white truncate">${escapeHtml(d.name)}</h3>
+                            <p class="text-xs text-gray-400">${count} ${count === 1 ? 'servizio' : 'servizi'}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 shrink-0">
+                        <button onclick="openDomainModal(${d.id})" class="p-2 text-gray-400 hover:text-indigo-400 rounded-lg hover:bg-gray-800" title="Modifica">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="deleteDomain(${d.id})" class="p-2 text-gray-400 hover:text-red-400 rounded-lg hover:bg-gray-800" title="Elimina">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function openDomainModal(id = null) {
+            const d = id ? domains.find(x => x.id === id) : null;
+            document.getElementById('domainForm').reset();
+            document.getElementById('domainId').value = d ? d.id : '';
+            document.getElementById('domainNameInput').value = d ? d.name : '';
+            document.getElementById('domainModalTitle').innerText = d ? 'Modifica Dominio' : 'Nuovo Dominio';
+            document.getElementById('domainModal').classList.remove('hidden');
+        }
+
+        function closeDomainModal() {
+            document.getElementById('domainModal').classList.add('hidden');
+        }
+
+        async function saveDomain(e) {
+            e.preventDefault();
+            const id = document.getElementById('domainId').value;
+            const payload = { name: document.getElementById('domainNameInput').value.trim() };
+            if (!payload.name) return;
+
+            const res = await fetch(id ? `/api/domains/${id}` : '/api/domains', {
+                method: id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                alert(err.error || 'Errore nel salvataggio del dominio');
+                return;
+            }
+
+            closeDomainModal();
+            await loadAll();
+            renderDomains();
+        }
+
+        async function deleteDomain(id) {
+            if (!confirm('Sicuro di voler eliminare questo dominio?')) return;
+            const res = await fetch(`/api/domains/${id}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                alert(err.error || 'Errore nell\'eliminazione del dominio');
+                return;
+            }
+            await loadAll();
+            renderDomains();
+        }
+
         // --- Modal Servizio ---
         function populateCategorySelect(selected) {
             const sel = document.getElementById('categoryInput');
@@ -486,11 +752,68 @@
             }
         }
 
+        function populateDomainSelect(selected) {
+            const sel = document.getElementById('domainInput');
+            sel.innerHTML = '';
+            const none = document.createElement('option');
+            none.value = '';
+            none.textContent = '— nessun dominio —';
+            sel.appendChild(none);
+            domains.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.name;
+                opt.textContent = d.name;
+                if (d.name === selected) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            if (selected && !domains.some(d => d.name === selected)) {
+                const opt = document.createElement('option');
+                opt.value = selected;
+                opt.textContent = selected;
+                opt.selected = true;
+                sel.appendChild(opt);
+            }
+        }
+
+        // Compone l'URL del servizio: protocollo://sottodominio.dominio
+        function buildUrl(protocol, subdomain, domain) {
+            const host = [subdomain, domain].filter(Boolean).join('.');
+            return host ? `${protocol}://${host}` : '';
+        }
+
+        // Scompone un URL esistente nei campi del form
+        function parseUrl(url) {
+            const m = /^(https?):\/\/(.+)$/i.exec(url || '');
+            const protocol = m ? m[1].toLowerCase() : 'https';
+            let subdomain = m ? m[2] : String(url || '');
+            let domain = '';
+            const match = [...domains]
+                .sort((a, b) => b.name.length - a.name.length)
+                .find(d => subdomain.toLowerCase().endsWith('.' + d.name.toLowerCase()));
+            if (match) {
+                domain = match.name;
+                subdomain = subdomain.slice(0, subdomain.length - match.name.length - 1);
+            }
+            return { protocol, subdomain, domain };
+        }
+
+        function updateUrlPreview() {
+            const url = buildUrl(
+                document.getElementById('protocolInput').value,
+                document.getElementById('subdomainInput').value.trim(),
+                document.getElementById('domainInput').value
+            );
+            document.getElementById('urlPreview').textContent = url || '—';
+        }
+
         function openModal() {
             document.getElementById('serviceForm').reset();
             document.getElementById('serviceId').value = '';
             document.getElementById('modalTitle').innerText = 'Aggiungi Servizio';
+            document.getElementById('protocolInput').value = 'https';
+            populateDomainSelect(null);
             populateCategorySelect(null);
+            updateUrlPreview();
             document.getElementById('modal').classList.remove('hidden');
         }
 
@@ -501,11 +824,15 @@
         function editService(id) {
             const s = services.find(x => x.id === id);
             if (!s) return;
+            const parsed = parseUrl(s.url);
             document.getElementById('serviceId').value = s.id;
             document.getElementById('nameInput').value = s.name;
-            document.getElementById('urlInput').value = s.url;
+            document.getElementById('protocolInput').value = parsed.protocol;
+            document.getElementById('subdomainInput').value = parsed.subdomain;
+            populateDomainSelect(parsed.domain);
             document.getElementById('logoInput').value = s.logo || '';
             populateCategorySelect(s.category);
+            updateUrlPreview();
             document.getElementById('modalTitle').innerText = 'Modifica Servizio';
             document.getElementById('modal').classList.remove('hidden');
         }
@@ -513,9 +840,15 @@
         async function saveService(e) {
             e.preventDefault();
             const id = document.getElementById('serviceId').value;
+            const subdomain = document.getElementById('subdomainInput').value.trim();
+            const domain = document.getElementById('domainInput').value;
+            if (!subdomain && !domain) {
+                alert('Inserisci un sottodominio oppure seleziona un dominio');
+                return;
+            }
             const payload = {
-                name: document.getElementById('nameInput').value,
-                url: document.getElementById('urlInput').value,
+                name: document.getElementById('nameInput').value.trim(),
+                url: buildUrl(document.getElementById('protocolInput').value, subdomain, domain),
                 logo: document.getElementById('logoInput').value,
                 category: document.getElementById('categoryInput').value
             };
@@ -544,9 +877,103 @@
             await loadAll();
         }
 
-        updateSortButtons();
-        switchView('dashboard');
-        loadAll();
+        // --- Autenticazione ---
+        function showLogin() {
+            document.getElementById('loginView').classList.remove('hidden');
+            clearPin();
+            focusPin(0);
+        }
+
+        function clearPin() {
+            document.querySelectorAll('.pin-box').forEach(i => { i.value = ''; });
+        }
+
+        function focusPin(index) {
+            const boxes = document.querySelectorAll('.pin-box');
+            if (boxes[index]) boxes[index].focus();
+        }
+
+        function pinValue() {
+            return [...document.querySelectorAll('.pin-box')].map(i => i.value).join('');
+        }
+
+        function showLoginError(msg) {
+            const el = document.getElementById('loginError');
+            el.textContent = msg;
+            el.classList.toggle('hidden', !msg);
+        }
+
+        const pinBoxes = [...document.querySelectorAll('.pin-box')];
+        pinBoxes.forEach((box, index) => {
+            box.addEventListener('input', () => {
+                box.value = box.value.replace(/\D/g, '').slice(0, 1);
+                if (box.value && index < pinBoxes.length - 1) pinBoxes[index + 1].focus();
+                if (pinValue().length === 4) submitPin();
+            });
+            box.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !box.value && index > 0) pinBoxes[index - 1].focus();
+                if (e.key === 'Enter') submitPin();
+            });
+            box.addEventListener('paste', (e) => {
+                const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 4);
+                if (!digits) return;
+                e.preventDefault();
+                pinBoxes.forEach((b, i) => { b.value = digits[i] || ''; });
+                if (digits.length === 4) submitPin();
+                else focusPin(digits.length);
+            });
+        });
+
+        async function submitPin() {
+            const pin = pinValue();
+            if (pin.length !== 4) return showLoginError('Inserisci tutte e 4 le cifre');
+            showLoginError('');
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin })
+            });
+            if (!res.ok) {
+                showLoginError('PIN errato');
+                clearPin();
+                focusPin(0);
+                return;
+            }
+            document.getElementById('loginView').classList.add('hidden');
+            clearPin();
+            boot();
+        }
+
+        async function logout() {
+            await fetch('/api/logout', { method: 'POST' });
+            services = [];
+            categories = [];
+            domains = [];
+            document.getElementById('servicesContainer').innerHTML = '';
+            document.getElementById('categoriesList').innerHTML = '';
+            document.getElementById('domainsList').innerHTML = '';
+            showLogin();
+        }
+
+        // --- Avvio ---
+        async function boot() {
+            updateSortButtons();
+            switchView('dashboard');
+            await loadAll();
+        }
+
+        (async function init() {
+            try {
+                const res = await fetch('/api/auth');
+                const data = await res.json();
+                authRequired = !!data.required;
+                document.getElementById('logoutBtn').classList.toggle('hidden', !authRequired);
+                if (data.required && !data.authenticated) return showLogin();
+            } catch (e) {
+                console.error("Errore verifica autenticazione:", e);
+            }
+            boot();
+        })();
     </script>
 </body>
 

@@ -12,3 +12,5 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3111
+      # PIN a 4 cifre per l'accesso. Modificalo (es. AUTH_PIN=4821 docker compose up -d)
+      - AUTH_PIN=${AUTH_PIN:-1234}
