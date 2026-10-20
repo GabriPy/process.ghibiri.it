@@ -48,30 +48,67 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-3 w-full sm:w-auto">
-            <div class="relative flex-1 sm:w-64">
-                <i
-                    class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-                <input type="text" id="searchInput" oninput="renderServices()" placeholder="Cerca servizio..."
-                    class="w-full bg-gray-900/80 border border-gray-700/60 rounded-xl pl-9 pr-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
-            </div>
-            <button onclick="openModal()"
-                class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition flex items-center gap-2">
-                <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Aggiungi</span>
+        <nav class="flex items-center gap-1 bg-gray-900/70 border border-gray-700/60 rounded-xl p-1">
+            <button onclick="switchView('dashboard')" id="navDashboard">
+                <i class="fa-solid fa-table-cells-large text-xs"></i> Dashboard
             </button>
-        </div>
+            <button onclick="switchView('tags')" id="navTags">
+                <i class="fa-solid fa-tags text-xs"></i> Categorie
+            </button>
+        </nav>
     </header>
 
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-6 flex-1 w-full pb-12">
-        <div id="servicesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"></div>
-        <div id="noResults" class="hidden text-center py-16 text-gray-400">
-            <i class="fa-solid fa-folder-open text-4xl mb-3 opacity-40"></i>
-            <p>Nessun servizio trovato.</p>
+
+        <!-- Vista Dashboard -->
+        <div id="dashboardView">
+            <div class="flex flex-wrap items-center gap-3 mb-6">
+                <div class="relative flex-1 min-w-[200px]">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="renderServices()" placeholder="Cerca servizio..."
+                        class="w-full bg-gray-900/80 border border-gray-700/60 rounded-xl pl-9 pr-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="flex items-center gap-1 bg-gray-900/70 border border-gray-700/60 rounded-xl p-1">
+                    <button onclick="setGrouping(true)" id="groupByCat">
+                        <i class="fa-solid fa-layer-group text-[11px]"></i> Per categoria
+                    </button>
+                    <button onclick="setGrouping(false)" id="groupAlpha">
+                        <i class="fa-solid fa-arrow-down-a-z text-[11px]"></i> A-Z
+                    </button>
+                </div>
+
+                <button onclick="openModal()"
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Aggiungi</span>
+                </button>
+            </div>
+
+            <div id="servicesContainer" class="space-y-8"></div>
+            <div id="noResults" class="hidden text-center py-16 text-gray-400">
+                <i class="fa-solid fa-folder-open text-4xl mb-3 opacity-40"></i>
+                <p>Nessun servizio trovato.</p>
+            </div>
+        </div>
+
+        <!-- Vista Categorie -->
+        <div id="tagsView" class="hidden">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+                <div>
+                    <h2 class="text-lg font-bold">Gestione Categorie</h2>
+                    <p class="text-xs text-gray-400">Crea le categorie e assegna un colore. Ogni servizio può avere una sola categoria.</p>
+                </div>
+                <button onclick="openCategoryModal()"
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Nuova Categoria
+                </button>
+            </div>
+            <div id="categoriesList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
         </div>
     </main>
 
-    <!-- Modal Aggiungi / Modifica -->
+    <!-- Modal Aggiungi / Modifica Servizio -->
     <div id="modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="glass w-full max-w-md rounded-2xl p-6 relative shadow-2xl">
             <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
@@ -97,8 +134,8 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-400 mb-1">CATEGORIA</label>
-                    <input type="text" id="categoryInput" placeholder="Es. Monitoraggio, System, Media"
-                        class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    <select id="categoryInput"
+                        class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"></select>
                 </div>
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" onclick="closeModal()"
@@ -110,28 +147,46 @@
         </div>
     </div>
 
+    <!-- Modal Aggiungi / Modifica Categoria -->
+    <div id="categoryModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass w-full max-w-md rounded-2xl p-6 relative shadow-2xl">
+            <button onclick="closeCategoryModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h2 id="categoryModalTitle" class="text-lg font-bold mb-4">Nuova Categoria</h2>
+            <form id="categoryForm" onsubmit="saveCategory(event)" class="space-y-4">
+                <input type="hidden" id="categoryId">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">NOME CATEGORIA</label>
+                    <input type="text" id="categoryNameInput" required placeholder="Es. Monitoraggio"
+                        class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-2">COLORE</label>
+                    <div id="colorPalette" class="flex flex-wrap gap-2"></div>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeCategoryModal()"
+                        class="px-4 py-2 text-sm text-gray-400 hover:text-white">Annulla</button>
+                    <button type="submit"
+                        class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2 rounded-xl transition">Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        const PALETTE = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#06b6d4', '#a855f7', '#ef4444', '#14b8a6', '#f97316', '#3b82f6'];
+        const UNCATEGORIZED = 'Senza categoria';
+        const UNCATEGORIZED_COLOR = '#6b7280';
+
         let services = [];
+        let categories = [];
+        let groupByCategory = true;
+        let selectedColor = PALETTE[0];
 
-        async function loadServices() {
-            try {
-                const res = await fetch('/api/services');
-                services = await res.json();
-                renderServices();
-            } catch (err) {
-                console.error("Errore caricamento servizi:", err);
-            }
-        }
-
-        const categoryPalette = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#06b6d4', '#a855f7', '#ef4444', '#14b8a6', '#f97316', '#3b82f6'];
-
-        function getCategoryColor(cat) {
-            const key = (cat || 'Generale').trim().toLowerCase();
-            let hash = 0;
-            for (let i = 0; i < key.length; i++) {
-                hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-            }
-            return categoryPalette[hash % categoryPalette.length];
+        function escapeHtml(str) {
+            return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
 
         function hexToRgba(hex, alpha) {
@@ -139,6 +194,153 @@
             const g = parseInt(hex.slice(3, 5), 16);
             const b = parseInt(hex.slice(5, 7), 16);
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function categoryColor(name) {
+            const c = categories.find(x => x.name === name);
+            return c ? c.color : UNCATEGORIZED_COLOR;
+        }
+
+        async function loadAll() {
+            try {
+                const [sRes, cRes] = await Promise.all([fetch('/api/services'), fetch('/api/categories')]);
+                services = await sRes.json();
+                categories = await cRes.json();
+                renderServices();
+            } catch (err) {
+                console.error("Errore caricamento dati:", err);
+            }
+        }
+
+        // --- Navigazione tra le viste ---
+        function switchView(view) {
+            const isTags = view === 'tags';
+            document.getElementById('dashboardView').classList.toggle('hidden', isTags);
+            document.getElementById('tagsView').classList.toggle('hidden', !isTags);
+
+            const base = 'px-3 py-1.5 text-sm font-semibold rounded-lg transition flex items-center gap-2';
+            const on = base + ' bg-indigo-600 text-white';
+            const off = base + ' text-gray-400 hover:text-white';
+            document.getElementById('navDashboard').className = isTags ? off : on;
+            document.getElementById('navTags').className = isTags ? on : off;
+
+            if (isTags) renderCategories();
+        }
+
+        // --- Ordinamento: raggruppato per categoria oppure alfabetico ---
+        function setGrouping(grouped) {
+            groupByCategory = grouped;
+            updateSortButtons();
+            renderServices();
+        }
+
+        function updateSortButtons() {
+            const base = 'px-3 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-2';
+            const on = base + ' bg-indigo-600 text-white';
+            const off = base + ' text-gray-400 hover:text-white';
+            document.getElementById('groupByCat').className = groupByCategory ? on : off;
+            document.getElementById('groupAlpha').className = groupByCategory ? off : on;
+        }
+
+        // --- Rendering dei servizi ---
+        function renderServices() {
+            const container = document.getElementById('servicesContainer');
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            container.innerHTML = '';
+
+            const filtered = services
+                .filter(s =>
+                    s.name.toLowerCase().includes(query) ||
+                    (s.category && s.category.toLowerCase().includes(query))
+                )
+                .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+
+            document.getElementById('noResults').classList.toggle('hidden', filtered.length > 0);
+
+            if (!groupByCategory) {
+                container.appendChild(buildGrid(filtered));
+            } else {
+                const groups = new Map();
+                filtered.forEach(s => {
+                    const key = (s.category && s.category.trim()) ? s.category.trim() : UNCATEGORIZED;
+                    if (!groups.has(key)) groups.set(key, []);
+                    groups.get(key).push(s);
+                });
+                [...groups.keys()]
+                    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+                    .forEach(key => container.appendChild(buildSection(key, groups.get(key))));
+            }
+
+            checkStatuses();
+        }
+
+        function buildGrid(list) {
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5';
+            list.forEach(s => grid.appendChild(createCard(s)));
+            return grid;
+        }
+
+        function buildSection(name, list) {
+            const isUncategorized = name === UNCATEGORIZED;
+            const color = isUncategorized ? UNCATEGORIZED_COLOR : categoryColor(name);
+
+            const section = document.createElement('section');
+
+            const header = document.createElement('div');
+            header.className = 'flex items-center gap-2 mb-3';
+            header.innerHTML = `
+                <span class="w-2.5 h-2.5 rounded-full" style="background-color:${color}"></span>
+                <h2 class="text-sm font-bold uppercase tracking-wider" style="color:${color}">${escapeHtml(name)}</h2>
+                <span class="text-xs text-gray-500">· ${list.length}</span>
+            `;
+            section.appendChild(header);
+            section.appendChild(buildGrid(list));
+            return section;
+        }
+
+        function createCard(s) {
+            const logoSrc = s.logo && s.logo.trim() !== '' ? s.logo : '/default-icon.svg';
+            const cat = (s.category && s.category.trim()) ? s.category.trim() : UNCATEGORIZED;
+            const color = cat === UNCATEGORIZED ? UNCATEGORIZED_COLOR : categoryColor(cat);
+
+            const card = document.createElement('div');
+            card.className = 'glass-card rounded-2xl p-5 relative group cursor-pointer flex flex-col justify-between';
+            card.style.borderLeft = `3px solid ${hexToRgba(color, 0.7)}`;
+
+            // Clic sull'intera card apre il servizio
+            card.onclick = (e) => {
+                if (!e.target.closest('.action-btn')) {
+                    window.open(s.url, '_blank');
+                }
+            };
+
+            card.innerHTML = `
+                <div class="flex items-start justify-between mb-4">
+                    <div class="relative">
+                        <div class="w-12 h-12 rounded-xl bg-gray-800/80 border border-gray-700/50 flex items-center justify-center p-2 overflow-hidden">
+                            <img src="${escapeHtml(logoSrc)}" alt="${escapeHtml(s.name)}" class="w-full h-full object-contain" onerror="this.src='/default-icon.svg'">
+                        </div>
+                        <span class="status-dot absolute -top-1 -left-1 w-3 h-3 rounded-full border-2" style="background-color:#6b7280; border-color:#0b0f19" data-url="${escapeHtml(s.url)}"></span>
+                    </div>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="editService(${s.id})" class="action-btn p-2 text-gray-400 hover:text-indigo-400 rounded-lg hover:bg-gray-800" title="Modifica">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="deleteService(${s.id})" class="action-btn p-2 text-gray-400 hover:text-red-400 rounded-lg hover:bg-gray-800" title="Elimina">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border" style="color:${color}; background-color:${hexToRgba(color, 0.1)}; border-color:${hexToRgba(color, 0.3)}">
+                        ${escapeHtml(cat)}
+                    </span>
+                    <h3 class="text-base font-semibold mt-1 text-white group-hover:text-indigo-300 transition-colors">${escapeHtml(s.name)}</h3>
+                    <p class="text-xs text-gray-400 truncate mt-0.5">${escapeHtml(s.url.replace(/^https?:\/\//, ''))}</p>
+                </div>
+            `;
+            return card;
         }
 
         async function checkStatuses() {
@@ -156,74 +358,139 @@
             }));
         }
 
-        function renderServices() {
-            const grid = document.getElementById('servicesGrid');
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            grid.innerHTML = '';
+        // --- Vista Categorie ---
+        function renderCategories() {
+            const list = document.getElementById('categoriesList');
+            list.innerHTML = '';
 
-            const filtered = services
-                .filter(s =>
-                    s.name.toLowerCase().includes(query) ||
-                    (s.category && s.category.toLowerCase().includes(query))
-                )
-                .sort((a, b) => {
-                    const ca = (a.category || 'Generale').trim().toLowerCase();
-                    const cb = (b.category || 'Generale').trim().toLowerCase();
-                    if (ca !== cb) return ca.localeCompare(cb);
-                    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-                });
+            const data = [...categories].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+            if (data.length === 0) {
+                list.innerHTML = `<p class="text-sm text-gray-400">Nessuna categoria. Creane una per iniziare.</p>`;
+                return;
+            }
 
-            document.getElementById('noResults').classList.toggle('hidden', filtered.length > 0);
-
-            filtered.forEach(s => {
-                const logoSrc = s.logo && s.logo.trim() !== '' ? s.logo : '/default-icon.svg';
-                const color = getCategoryColor(s.category);
+            data.forEach(c => {
                 const card = document.createElement('div');
-                card.className = 'glass-card rounded-2xl p-5 relative group cursor-pointer flex flex-col justify-between';
-                card.style.borderLeft = `3px solid ${hexToRgba(color, 0.7)}`;
-
-                // Clic sull'intera card apre il servizio
-                card.onclick = (e) => {
-                    if (!e.target.closest('.action-btn')) {
-                        window.open(s.url, '_blank');
-                    }
-                };
-
+                card.className = 'glass-card rounded-2xl p-5 flex items-center justify-between';
                 card.innerHTML = `
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="relative">
-                            <div class="w-12 h-12 rounded-xl bg-gray-800/80 border border-gray-700/50 flex items-center justify-center p-2 overflow-hidden">
-                                <img src="${logoSrc}" alt="${s.name}" class="w-full h-full object-contain" onerror="this.src='/default-icon.svg'">
-                            </div>
-                            <span class="status-dot absolute -top-1 -left-1 w-3 h-3 rounded-full border-2" style="background-color:#6b7280; border-color:#0b0f19" data-url="${s.url}"></span>
-                        </div>
-                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="editService(${s.id})" class="action-btn p-2 text-gray-400 hover:text-indigo-400 rounded-lg hover:bg-gray-800" title="Modifica">
-                                <i class="fa-solid fa-pen text-xs"></i>
-                            </button>
-                            <button onclick="deleteService(${s.id})" class="action-btn p-2 text-gray-400 hover:text-red-400 rounded-lg hover:bg-gray-800" title="Elimina">
-                                <i class="fa-solid fa-trash text-xs"></i>
-                            </button>
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-9 h-9 shrink-0 rounded-xl border flex items-center justify-center" style="background-color:${hexToRgba(c.color, 0.15)}; border-color:${hexToRgba(c.color, 0.4)}">
+                            <span class="w-3 h-3 rounded-full" style="background-color:${c.color}"></span>
+                        </span>
+                        <div class="min-w-0">
+                            <h3 class="text-sm font-semibold text-white truncate">${escapeHtml(c.name)}</h3>
+                            <p class="text-xs text-gray-400">${c.count} ${c.count === 1 ? 'servizio' : 'servizi'}</p>
                         </div>
                     </div>
-                    <div>
-                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border" style="color:${color}; background-color:${hexToRgba(color, 0.1)}; border-color:${hexToRgba(color, 0.3)}">
-                            ${s.category || 'Generale'}
-                        </span>
-                        <h3 class="text-base font-semibold mt-1 text-white group-hover:text-indigo-300 transition-colors">${s.name}</h3>
-                        <p class="text-xs text-gray-400 truncate mt-0.5">${s.url.replace(/^https?:\/\//, '')}</p>
+                    <div class="flex gap-1 shrink-0">
+                        <button onclick="openCategoryModal(${c.id})" class="p-2 text-gray-400 hover:text-indigo-400 rounded-lg hover:bg-gray-800" title="Modifica">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="deleteCategory(${c.id})" class="p-2 text-gray-400 hover:text-red-400 rounded-lg hover:bg-gray-800" title="Elimina">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
                     </div>
                 `;
-                grid.appendChild(card);
+                list.appendChild(card);
+            });
+        }
+
+        function openCategoryModal(id = null) {
+            const cat = id ? categories.find(c => c.id === id) : null;
+            document.getElementById('categoryForm').reset();
+            document.getElementById('categoryId').value = cat ? cat.id : '';
+            document.getElementById('categoryNameInput').value = cat ? cat.name : '';
+            document.getElementById('categoryModalTitle').innerText = cat ? 'Modifica Categoria' : 'Nuova Categoria';
+            selectedColor = cat ? cat.color : PALETTE[0];
+            renderColorPalette();
+            document.getElementById('categoryModal').classList.remove('hidden');
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').classList.add('hidden');
+        }
+
+        function renderColorPalette() {
+            const wrap = document.getElementById('colorPalette');
+            wrap.innerHTML = '';
+            PALETTE.forEach(col => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'w-8 h-8 rounded-lg border transition';
+                btn.style.backgroundColor = col;
+                btn.style.borderColor = col === selectedColor ? '#ffffff' : 'rgba(255,255,255,0.15)';
+                btn.style.boxShadow = col === selectedColor ? '0 0 0 2px rgba(255,255,255,0.7)' : 'none';
+                btn.onclick = () => { selectedColor = col; renderColorPalette(); };
+                wrap.appendChild(btn);
+            });
+        }
+
+        async function saveCategory(e) {
+            e.preventDefault();
+            const id = document.getElementById('categoryId').value;
+            const payload = {
+                name: document.getElementById('categoryNameInput').value.trim(),
+                color: selectedColor
+            };
+            if (!payload.name) return;
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `/api/categories/${id}` : '/api/categories';
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
 
-            checkStatuses();
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                alert(err.error || 'Errore nel salvataggio della categoria');
+                return;
+            }
+
+            closeCategoryModal();
+            await loadAll();
+            renderCategories();
+        }
+
+        async function deleteCategory(id) {
+            if (!confirm('Sicuro di voler eliminare questa categoria?')) return;
+            const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                alert(err.error || 'Errore nell\'eliminazione della categoria');
+                return;
+            }
+            await loadAll();
+            renderCategories();
+        }
+
+        // --- Modal Servizio ---
+        function populateCategorySelect(selected) {
+            const sel = document.getElementById('categoryInput');
+            sel.innerHTML = '';
+            const data = [...categories].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+            data.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                opt.textContent = c.name;
+                if (c.name === selected) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            if (selected && !data.some(c => c.name === selected)) {
+                const opt = document.createElement('option');
+                opt.value = selected;
+                opt.textContent = selected;
+                opt.selected = true;
+                sel.appendChild(opt);
+            }
         }
 
         function openModal() {
             document.getElementById('serviceForm').reset();
             document.getElementById('serviceId').value = '';
             document.getElementById('modalTitle').innerText = 'Aggiungi Servizio';
+            populateCategorySelect(null);
             document.getElementById('modal').classList.remove('hidden');
         }
 
@@ -238,7 +505,7 @@
             document.getElementById('nameInput').value = s.name;
             document.getElementById('urlInput').value = s.url;
             document.getElementById('logoInput').value = s.logo || '';
-            document.getElementById('categoryInput').value = s.category || '';
+            populateCategorySelect(s.category);
             document.getElementById('modalTitle').innerText = 'Modifica Servizio';
             document.getElementById('modal').classList.remove('hidden');
         }
@@ -255,24 +522,31 @@
 
             const method = id ? 'PUT' : 'POST';
             const url = id ? `/api/services/${id}` : '/api/services';
-
-            await fetch(url, {
+            const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                alert(err.error || 'Errore nel salvataggio del servizio');
+                return;
+            }
+
             closeModal();
-            loadServices();
+            await loadAll();
         }
 
         async function deleteService(id) {
             if (!confirm('Sicuro di voler eliminare questo servizio?')) return;
             await fetch(`/api/services/${id}`, { method: 'DELETE' });
-            loadServices();
+            await loadAll();
         }
 
-        loadServices();
+        updateSortButtons();
+        switchView('dashboard');
+        loadAll();
     </script>
 </body>
 
