@@ -42,6 +42,8 @@ db.run(`
             name TEXT NOT NULL,
             url TEXT NOT NULL,
             logo TEXT,
+            icon TEXT,
+            icon_color TEXT,
             category TEXT DEFAULT '${DEFAULT_CATEGORY}',
             position INTEGER,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -53,15 +55,27 @@ db.run(`
             if (err3 && !String(err3.message).includes('duplicate column')) {
                 console.error("Errore migrazione colonna position:", err3.message);
             }
-            db.run(`
-                CREATE TABLE IF NOT EXISTS domains (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL UNIQUE,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            `, (err4) => {
-                if (err4) console.error("Errore creazione tabella domains:", err4.message);
-                seedAndSyncCategories();
+            // Migrazione: colonna icon (classe Font Awesome del servizio)
+            db.run("ALTER TABLE services ADD COLUMN icon TEXT", (errIcon) => {
+                if (errIcon && !String(errIcon.message).includes('duplicate column')) {
+                    console.error("Errore migrazione colonna icon:", errIcon.message);
+                }
+                // Migrazione: colonna icon_color (colore del box icona)
+                db.run("ALTER TABLE services ADD COLUMN icon_color TEXT", (errIconColor) => {
+                    if (errIconColor && !String(errIconColor.message).includes('duplicate column')) {
+                        console.error("Errore migrazione colonna icon_color:", errIconColor.message);
+                    }
+                    db.run(`
+                        CREATE TABLE IF NOT EXISTS domains (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            name TEXT NOT NULL UNIQUE,
+                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                        )
+                    `, (err4) => {
+                        if (err4) console.error("Errore creazione tabella domains:", err4.message);
+                        seedAndSyncCategories();
+                    });
+                });
             });
         });
     });
@@ -71,10 +85,10 @@ db.run(`
 function seedAndSyncCategories() {
     db.get("SELECT COUNT(*) AS count FROM services", (err, row) => {
         if (!err && row.count === 0) {
-            const stmt = db.prepare("INSERT INTO services (name, url, logo, category) VALUES (?, ?, ?, ?)");
-            stmt.run("Portainer", "http://localhost:9000", "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/portainer.png", "Gestione");
-            stmt.run("Beszel", "http://localhost:8090", "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/beszel.png", "Monitoraggio");
-            stmt.run("Uptime Kuma", "http://localhost:3001", "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/uptime-kuma.png", "Monitoraggio");
+            const stmt = db.prepare("INSERT INTO services (name, url, icon, icon_color, category) VALUES (?, ?, ?, ?, ?)");
+            stmt.run("Portainer", "http://localhost:9000", "fa-solid fa-cube", "#6366f1", "Gestione");
+            stmt.run("Beszel", "http://localhost:8090", "fa-solid fa-gauge-high", "#22c55e", "Monitoraggio");
+            stmt.run("Uptime Kuma", "http://localhost:3001", "fa-solid fa-heart-pulse", "#ec4899", "Monitoraggio");
             stmt.finalize(() => syncCategories());
         } else {
             syncCategories();
@@ -193,7 +207,7 @@ app.get('/api/services', (req, res) => {
 
 // API: Aggiungi servizio
 app.post('/api/services', (req, res) => {
-    const { name, url, logo, category } = req.body;
+    const { name, url, logo, icon, icon_color, category } = req.body;
     if (!name || !url) {
         return res.status(400).json({ error: "Nome e URL sono obbligatori" });
     }
@@ -201,11 +215,11 @@ app.post('/api/services', (req, res) => {
     db.get("SELECT COALESCE(MAX(position), -1) + 1 AS nextPos FROM services", [], (err, row) => {
         const nextPos = err ? 0 : row.nextPos;
         db.run(
-            "INSERT INTO services (name, url, logo, category, position) VALUES (?, ?, ?, ?, ?)",
-            [name, url, logo || '', cat, nextPos],
+            "INSERT INTO services (name, url, logo, icon, icon_color, category, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [name, url, logo || '', icon || '', icon_color || '', cat, nextPos],
             function (err2) {
                 if (err2) return res.status(500).json({ error: err2.message });
-                res.json({ id: this.lastID, name, url, logo, category: cat, position: nextPos });
+                res.json({ id: this.lastID, name, url, logo, icon, icon_color, category: cat, position: nextPos });
             }
         );
     });
@@ -235,11 +249,11 @@ app.put('/api/services/order', (req, res) => {
 
 // API: Modifica servizio
 app.put('/api/services/:id', (req, res) => {
-    const { name, url, logo, category } = req.body;
+    const { name, url, logo, icon, icon_color, category } = req.body;
     const { id } = req.params;
     db.run(
-        "UPDATE services SET name = ?, url = ?, logo = ?, category = ? WHERE id = ?",
-        [name, url, logo || '', category || 'Generale', id],
+        "UPDATE services SET name = ?, url = ?, logo = ?, icon = ?, icon_color = ?, category = ? WHERE id = ?",
+        [name, url, logo || '', icon || '', icon_color || '', category || 'Generale', id],
         function (err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ updated: this.changes });
@@ -395,12 +409,14 @@ app.get('/api/check', async (req, res) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     try {
+        let response;
         try {
-            await fetch(url, { method: 'HEAD', redirect: 'follow', signal: controller.signal });
+            response = await fetch(url, { method: 'HEAD', redirect: 'follow', signal: controller.signal });
         } catch (headErr) {
-            await fetch(url, { method: 'GET', redirect: 'follow', signal: controller.signal });
+            response = await fetch(url, { method: 'GET', redirect: 'follow', signal: controller.signal });
         }
-        res.json({ online: true });
+        // Un 5xx (es. 502/504 dei Cloudflare Tunnel non connessi) significa origine non raggiungibile
+        res.json({ online: response.status < 500 });
     } catch (err) {
         res.json({ online: false });
     } finally {

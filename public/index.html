@@ -218,13 +218,27 @@
                     URL risultante: <span id="urlPreview" class="text-indigo-300">https://</span>
                 </p>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-400 mb-1">URL LOGO (Opzionale)</label>
-                    <input type="url" id="logoInput" placeholder="https://link-al-logo.png"
-                        class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    <label class="block text-xs font-semibold text-gray-400 mb-2">ICONA</label>
+                    <div class="flex items-center gap-3 mb-2">
+                        <div id="iconPreview"
+                            class="w-11 h-11 shrink-0 rounded-xl border flex items-center justify-center text-lg border-gray-700">
+                            <i class="fa-solid fa-cube"></i>
+                        </div>
+                        <input type="text" id="iconInput" placeholder="fa-solid fa-server" oninput="onIconInput()"
+                            class="flex-1 min-w-0 bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <input type="text" id="iconSearch" placeholder="Cerca icona (server, docker, database…)" oninput="renderIconGrid()"
+                        class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs mb-2 focus:outline-none focus:border-indigo-500">
+                    <div id="iconGrid"
+                        class="grid grid-cols-6 sm:grid-cols-8 gap-1.5 max-h-36 overflow-y-auto p-2 rounded-xl border border-gray-700/60 bg-gray-900/50"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-2">COLORE ICONA</label>
+                    <div id="iconColorPalette" class="flex flex-wrap items-center gap-2"></div>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-400 mb-1">CATEGORIA</label>
-                    <select id="categoryInput"
+                    <select id="categoryInput" onchange="updateIconPreview()"
                         class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"></select>
                 </div>
                 <div class="flex justify-end gap-3 pt-2">
@@ -294,11 +308,66 @@
         const UNCATEGORIZED = 'Senza categoria';
         const UNCATEGORIZED_COLOR = '#6b7280';
 
+        // Icone Font Awesome 6 Free più usate in una dashboard homelab (il campo di testo accetta qualsiasi classe)
+        const ICONS = [
+            'fa-solid fa-server', 'fa-solid fa-database', 'fa-solid fa-hard-drive', 'fa-solid fa-network-wired',
+            'fa-solid fa-cloud', 'fa-solid fa-cloud-arrow-down', 'fa-solid fa-cloud-arrow-up', 'fa-solid fa-globe',
+            'fa-solid fa-shield-halved', 'fa-solid fa-lock', 'fa-solid fa-key', 'fa-solid fa-user-shield',
+            'fa-solid fa-terminal', 'fa-solid fa-code', 'fa-solid fa-code-branch', 'fa-solid fa-file-code',
+            'fa-solid fa-cube', 'fa-solid fa-cubes', 'fa-solid fa-box', 'fa-solid fa-boxes-stacked',
+            'fa-solid fa-layer-group', 'fa-solid fa-sitemap', 'fa-solid fa-diagram-project', 'fa-solid fa-ethernet',
+            'fa-solid fa-chart-line', 'fa-solid fa-chart-pie', 'fa-solid fa-chart-column', 'fa-solid fa-chart-simple',
+            'fa-solid fa-gauge', 'fa-solid fa-gauge-high', 'fa-solid fa-heart-pulse', 'fa-solid fa-activity',
+            'fa-solid fa-waveform', 'fa-solid fa-bell', 'fa-solid fa-envelope', 'fa-solid fa-paper-plane',
+            'fa-solid fa-house', 'fa-solid fa-film', 'fa-solid fa-video', 'fa-solid fa-camera',
+            'fa-solid fa-image', 'fa-solid fa-music', 'fa-solid fa-book', 'fa-solid fa-bookmark',
+            'fa-solid fa-folder', 'fa-solid fa-file', 'fa-solid fa-floppy-disk', 'fa-solid fa-printer',
+            'fa-solid fa-wifi', 'fa-solid fa-plug', 'fa-solid fa-bolt', 'fa-solid fa-fire',
+            'fa-solid fa-microchip', 'fa-solid fa-memory', 'fa-solid fa-robot', 'fa-solid fa-brain',
+            'fa-solid fa-satellite-dish', 'fa-solid fa-tower-broadcast', 'fa-solid fa-tv', 'fa-solid fa-desktop',
+            'fa-solid fa-laptop', 'fa-solid fa-mobile-screen', 'fa-solid fa-keyboard', 'fa-solid fa-computer-mouse',
+            'fa-solid fa-download', 'fa-solid fa-upload', 'fa-solid fa-arrows-rotate', 'fa-solid fa-gear',
+            'fa-solid fa-gears', 'fa-solid fa-wrench', 'fa-solid fa-screwdriver-wrench', 'fa-solid fa-hammer',
+            'fa-solid fa-magnifying-glass', 'fa-solid fa-link', 'fa-solid fa-share-nodes', 'fa-solid fa-users',
+            'fa-solid fa-user', 'fa-solid fa-id-card', 'fa-solid fa-address-book', 'fa-solid fa-calendar',
+            'fa-solid fa-clock', 'fa-solid fa-stopwatch', 'fa-solid fa-list-check', 'fa-solid fa-clipboard-list',
+            'fa-solid fa-note-sticky', 'fa-solid fa-pen', 'fa-solid fa-star', 'fa-solid fa-heart',
+            'fa-solid fa-flag', 'fa-solid fa-circle-check', 'fa-solid fa-triangle-exclamation', 'fa-solid fa-circle-info',
+            'fa-solid fa-lightbulb', 'fa-solid fa-map', 'fa-solid fa-location-dot', 'fa-solid fa-compass',
+            'fa-solid fa-route', 'fa-solid fa-truck', 'fa-solid fa-cart-shopping', 'fa-solid fa-box-open',
+            'fa-solid fa-pallet', 'fa-solid fa-warehouse', 'fa-solid fa-industry', 'fa-solid fa-building',
+            'fa-solid fa-store', 'fa-solid fa-credit-card', 'fa-solid fa-wallet', 'fa-solid fa-coins',
+            'fa-solid fa-receipt', 'fa-solid fa-calculator', 'fa-solid fa-scale-balanced', 'fa-solid fa-briefcase',
+            'fa-solid fa-graduation-cap', 'fa-solid fa-flask', 'fa-solid fa-atom', 'fa-solid fa-bug',
+            'fa-solid fa-feather', 'fa-solid fa-magnet', 'fa-solid fa-radar', 'fa-solid fa-crosshairs',
+            'fa-solid fa-gamepad', 'fa-solid fa-dice', 'fa-solid fa-trophy', 'fa-solid fa-crown',
+            'fa-solid fa-gem', 'fa-solid fa-palette', 'fa-solid fa-brush', 'fa-solid fa-pen-nib',
+            'fa-solid fa-scissors', 'fa-solid fa-object-group', 'fa-solid fa-font', 'fa-solid fa-icons',
+            'fa-solid fa-table', 'fa-solid fa-table-cells', 'fa-solid fa-list', 'fa-solid fa-bars',
+            'fa-solid fa-grip', 'fa-solid fa-ellipsis', 'fa-solid fa-hashtag', 'fa-solid fa-tag',
+            'fa-solid fa-tags', 'fa-solid fa-filter', 'fa-solid fa-sliders', 'fa-solid fa-toggle-on',
+            'fa-solid fa-power-off', 'fa-solid fa-plug-circle-bolt', 'fa-solid fa-merge', 'fa-solid fa-shuffle',
+            'fa-brands fa-docker', 'fa-brands fa-github', 'fa-brands fa-gitlab', 'fa-brands fa-bitbucket',
+            'fa-brands fa-jira', 'fa-brands fa-slack', 'fa-brands fa-discord', 'fa-brands fa-telegram',
+            'fa-brands fa-whatsapp', 'fa-brands fa-reddit', 'fa-brands fa-twitch', 'fa-brands fa-youtube',
+            'fa-brands fa-spotify', 'fa-brands fa-apple', 'fa-brands fa-android', 'fa-brands fa-windows',
+            'fa-brands fa-linux', 'fa-brands fa-ubuntu', 'fa-brands fa-redhat', 'fa-brands fa-fedora',
+            'fa-brands fa-centos', 'fa-brands fa-digital-ocean', 'fa-brands fa-aws', 'fa-brands fa-google',
+            'fa-brands fa-microsoft', 'fa-brands fa-npm', 'fa-brands fa-node-js', 'fa-brands fa-python',
+            'fa-brands fa-php', 'fa-brands fa-js', 'fa-brands fa-react', 'fa-brands fa-vuejs',
+            'fa-brands fa-angular', 'fa-brands fa-sass', 'fa-brands fa-css3-alt', 'fa-brands fa-html5',
+            'fa-brands fa-java', 'fa-brands fa-rust', 'fa-brands fa-golang', 'fa-brands fa-swift',
+            'fa-brands fa-unity', 'fa-brands fa-steam', 'fa-brands fa-playstation', 'fa-brands fa-xbox'
+        ];
+
         let services = [];
         let categories = [];
         let domains = [];
         let groupByCategory = true;
         let selectedColor = PALETTE[0];
+        let selectedIcon = 'fa-solid fa-cube';
+        let iconColor = '';      // '' = eredita il colore della categoria
+        let currentLogo = '';    // logo storico del servizio in modifica (mantenuto per compatibilità)
         let authRequired = false;
         let dragEl = null;
 
@@ -456,9 +525,11 @@
         }
 
         function createCard(s, draggable = false) {
-            const logoSrc = s.logo && s.logo.trim() !== '' ? s.logo : '/default-icon.svg';
-            const cat = (s.category && s.category.trim()) ? s.category.trim() : UNCATEGORIZED;
+            const cat = serviceCategory(s);
             const color = cat === UNCATEGORIZED ? UNCATEGORIZED_COLOR : categoryColor(cat);
+            const icon = (s.icon && s.icon.trim()) ? s.icon.trim() : '';
+            const iconCol = (s.icon_color && s.icon_color.trim()) ? s.icon_color.trim() : color;
+            const logoSrc = (s.logo && s.logo.trim() !== '') ? s.logo : '/default-icon.svg';
 
             const card = document.createElement('div');
             card.className = 'glass-card rounded-2xl p-5 relative group cursor-pointer flex flex-col justify-between';
@@ -477,8 +548,10 @@
                 <div class="flex items-start justify-between mb-4">
                     <div class="relative">
                         <div class="w-12 h-12 rounded-xl border flex items-center justify-center p-2 overflow-hidden"
-                            style="background-color:${hexToRgba(color, 0.18)}; border-color:${hexToRgba(color, 0.4)}">
-                            <img src="${escapeHtml(logoSrc)}" alt="${escapeHtml(s.name)}" class="w-full h-full object-contain" onerror="this.src='/default-icon.svg'">
+                            style="background-color:${hexToRgba(iconCol, 0.18)}; border-color:${hexToRgba(iconCol, 0.4)}">
+                            ${icon
+                                ? `<i class="${escapeHtml(icon)} text-xl" style="color:${iconCol}"></i>`
+                                : `<img src="${escapeHtml(logoSrc)}" alt="${escapeHtml(s.name)}" class="w-full h-full object-contain" onerror="this.src='/default-icon.svg'">`}
                         </div>
                         <span class="status-dot absolute -top-1 -left-1 w-3 h-3 rounded-full border-2" style="background-color:#6b7280; border-color:#0b0f19" data-url="${escapeHtml(s.url)}"></span>
                     </div>
@@ -752,6 +825,93 @@
             });
         }
 
+        // --- Selettore icona (Font Awesome) ---
+        function renderIconGrid() {
+            const grid = document.getElementById('iconGrid');
+            const q = document.getElementById('iconSearch').value.trim().toLowerCase();
+            const list = q ? ICONS.filter(c => c.toLowerCase().includes(q)) : ICONS;
+            grid.innerHTML = '';
+            if (list.length === 0) {
+                grid.innerHTML = '<p class="col-span-6 sm:col-span-8 text-[11px] text-gray-500 p-1">Nessuna icona trovata: incolla la classe Font Awesome nel campo qui sopra.</p>';
+                return;
+            }
+            list.forEach(cls => {
+                const active = cls === selectedIcon;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.title = cls;
+                btn.className = 'h-9 rounded-lg border flex items-center justify-center text-sm transition ' +
+                    (active ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300'
+                            : 'border-gray-700/60 text-gray-400 hover:text-white hover:border-gray-500');
+                btn.innerHTML = `<i class="${cls}"></i>`;
+                btn.onclick = () => {
+                    selectedIcon = cls;
+                    document.getElementById('iconInput').value = cls;
+                    renderIconGrid();
+                    updateIconPreview();
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function onIconInput() {
+            selectedIcon = document.getElementById('iconInput').value.trim();
+            renderIconGrid();
+            updateIconPreview();
+        }
+
+        // --- Selettore colore del box icona ---
+        function renderIconColorPalette() {
+            const wrap = document.getElementById('iconColorPalette');
+            wrap.innerHTML = '';
+
+            const auto = document.createElement('button');
+            auto.type = 'button';
+            auto.title = 'Usa il colore della categoria';
+            auto.className = 'px-3 h-8 rounded-lg border text-[11px] font-semibold transition ' +
+                (iconColor === '' ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300'
+                                  : 'border-gray-700 text-gray-400 hover:text-white');
+            auto.textContent = 'Categoria';
+            auto.onclick = () => { iconColor = ''; renderIconColorPalette(); updateIconPreview(); };
+            wrap.appendChild(auto);
+
+            PALETTE.forEach(col => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.title = col;
+                btn.className = 'w-8 h-8 rounded-lg border transition';
+                btn.style.backgroundColor = col;
+                btn.style.borderColor = col === iconColor ? '#ffffff' : 'rgba(255,255,255,0.15)';
+                btn.style.boxShadow = col === iconColor ? '0 0 0 2px rgba(255,255,255,0.7)' : 'none';
+                btn.onclick = () => { iconColor = col; renderIconColorPalette(); updateIconPreview(); };
+                wrap.appendChild(btn);
+            });
+
+            const custom = document.createElement('input');
+            custom.type = 'color';
+            custom.title = 'Colore personalizzato';
+            custom.value = iconColor || PALETTE[0];
+            custom.className = 'w-8 h-8 rounded-lg border border-gray-700 bg-transparent cursor-pointer';
+            custom.oninput = () => { iconColor = custom.value; updateIconPreview(); };
+            custom.onchange = () => { iconColor = custom.value; renderIconColorPalette(); updateIconPreview(); };
+            wrap.appendChild(custom);
+        }
+
+        // Colore effettivo del box icona: scelta dell'utente oppure colore della categoria
+        function currentIconColor() {
+            if (iconColor) return iconColor;
+            const cat = document.getElementById('categoryInput').value;
+            return cat === UNCATEGORIZED ? UNCATEGORIZED_COLOR : categoryColor(cat);
+        }
+
+        function updateIconPreview() {
+            const col = currentIconColor();
+            const box = document.getElementById('iconPreview');
+            box.style.backgroundColor = hexToRgba(col, 0.18);
+            box.style.borderColor = hexToRgba(col, 0.4);
+            box.innerHTML = `<i class="${escapeHtml(selectedIcon || 'fa-solid fa-cube')}" style="color:${col}"></i>`;
+        }
+
         async function saveCategory(e) {
             e.preventDefault();
             const id = document.getElementById('categoryId').value;
@@ -920,9 +1080,17 @@
             document.getElementById('serviceId').value = '';
             document.getElementById('modalTitle').innerText = 'Aggiungi Servizio';
             document.getElementById('protocolInput').value = 'https';
+            selectedIcon = 'fa-solid fa-cube';
+            iconColor = '';
+            currentLogo = '';
+            document.getElementById('iconInput').value = '';
+            document.getElementById('iconSearch').value = '';
+            renderIconGrid();
             populateDomainSelect(null);
             populateCategorySelect(null);
+            renderIconColorPalette();
             updateUrlPreview();
+            updateIconPreview();
             document.getElementById('modal').classList.remove('hidden');
         }
 
@@ -939,9 +1107,16 @@
             document.getElementById('protocolInput').value = parsed.protocol;
             document.getElementById('subdomainInput').value = parsed.subdomain;
             populateDomainSelect(parsed.domain);
-            document.getElementById('logoInput').value = s.logo || '';
+            selectedIcon = (s.icon && s.icon.trim()) ? s.icon.trim() : 'fa-solid fa-cube';
+            iconColor = (s.icon_color && s.icon_color.trim()) ? s.icon_color.trim() : '';
+            currentLogo = s.logo || '';
+            document.getElementById('iconInput').value = (s.icon || '').trim();
+            document.getElementById('iconSearch').value = '';
             populateCategorySelect(s.category);
+            renderIconGrid();
+            renderIconColorPalette();
             updateUrlPreview();
+            updateIconPreview();
             document.getElementById('modalTitle').innerText = 'Modifica Servizio';
             document.getElementById('modal').classList.remove('hidden');
         }
@@ -958,7 +1133,9 @@
             const payload = {
                 name: document.getElementById('nameInput').value.trim(),
                 url: buildUrl(document.getElementById('protocolInput').value, subdomain, domain),
-                logo: document.getElementById('logoInput').value,
+                logo: currentLogo,
+                icon: selectedIcon,
+                icon_color: iconColor,
                 category: document.getElementById('categoryInput').value
             };
 
