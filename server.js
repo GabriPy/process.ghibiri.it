@@ -71,10 +71,13 @@ async function initDatabase() {
                 url TEXT NOT NULL,
                 icon TEXT,
                 color TEXT,
+                category TEXT DEFAULT '',
                 position INTEGER,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        // Migrazione: categoria dei collegamenti per i database creati prima
+        await addColumnIfMissing('links', 'category', 'TEXT');
         await seedAndSyncCategories();
         await migratePositions();
     } catch (err) {
@@ -113,9 +116,13 @@ async function seedAndSyncCategories() {
     await syncCategories();
 }
 
-// Aggiunge alla tabella categories le categorie usate dai servizi ma non ancora registrate
+// Aggiunge alla tabella categories le categorie usate dai servizi e dai collegamenti
 async function syncCategories() {
-    const rows = await dbAll("SELECT DISTINCT TRIM(category) AS name FROM services WHERE category IS NOT NULL AND TRIM(category) != '' ORDER BY name");
+    const rows = await dbAll(`
+        SELECT DISTINCT TRIM(category) AS name FROM services WHERE category IS NOT NULL AND TRIM(category) != ''
+        UNION
+        SELECT DISTINCT TRIM(category) AS name FROM links WHERE category IS NOT NULL AND TRIM(category) != ''
+    `);
     let names = rows.map(r => r.name).filter(Boolean);
     if (names.length === 0) names = [DEFAULT_CATEGORY];
     for (let i = 0; i < names.length; i++) {
@@ -323,11 +330,12 @@ app.put('/api/services/:id', (req, res) => {
     );
 });
 
-// API: Ottieni tutte le categorie (con conteggio servizi)
+// API: Ottieni tutte le categorie (con conteggio servizi e collegamenti)
 app.get('/api/categories', (req, res) => {
     db.all(`
         SELECT c.id, c.name, c.color,
-            (SELECT COUNT(*) FROM services s WHERE s.category = c.name) AS count
+            (SELECT COUNT(*) FROM services s WHERE s.category = c.name) AS count,
+            (SELECT COUNT(*) FROM links l WHERE l.category = c.name) AS link_count
         FROM categories c
         ORDER BY c.name COLLATE NOCASE ASC
     `, [], (err, rows) => {
@@ -380,7 +388,9 @@ app.put('/api/categories/:id', (req, res) => {
                     return res.status(500).json({ error: err2.message });
                 }
                 if (oldName !== newName) {
+                    // La rinomina vale anche per i collegamenti che usano la categoria
                     db.run("UPDATE services SET category = ? WHERE category = ?", [newName, oldName]);
+                    db.run("UPDATE links SET category = ? WHERE category = ?", [newName, oldName]);
                 }
                 res.json({ updated: this.changes });
             }
@@ -388,16 +398,21 @@ app.put('/api/categories/:id', (req, res) => {
     });
 });
 
-// API: Elimina categoria (solo se non usata da nessun servizio)
+// API: Elimina categoria (solo se non usata da nessun servizio o collegamento)
 app.delete('/api/categories/:id', (req, res) => {
     const { id } = req.params;
     db.get("SELECT name FROM categories WHERE id = ?", [id], (err, row) => {
         if (err) return res.status(500).json({ error: err.message });
         if (!row) return res.status(404).json({ error: "Categoria non trovata" });
-        db.get("SELECT COUNT(*) AS count FROM services WHERE category = ?", [row.name], (err2, c) => {
+        db.get(`
+            SELECT (SELECT COUNT(*) FROM services WHERE category = ?) +
+                   (SELECT COUNT(*) FROM links WHERE category = ?) AS count
+        `, [row.name, row.name], (err2, c) => {
             if (err2) return res.status(500).json({ error: err2.message });
             if (c.count > 0) {
-                return res.status(409).json({ error: `Impossibile eliminare: categoria usata da ${c.count} servizi` });
+                return res.status(409).json({
+                    error: `Impossibile eliminare: categoria usata da ${c.count} ${c.count === 1 ? 'elemento' : 'elementi'}`
+                });
             }
             db.run("DELETE FROM categories WHERE id = ?", [id], function (err3) {
                 if (err3) return res.status(500).json({ error: err3.message });
@@ -470,14 +485,25 @@ function linkPayload(body) {
         name: cleanText(source.name, 120),
         url: normalizeUrl(source.url),
         icon: cleanText(source.icon, 120),
-        color: HEX_COLOR.test(String(source.color || '')) ? String(source.color) : DEFAULT_COLORS[0]
+        color: HEX_COLOR.test(String(source.color || '')) ? String(source.color) : DEFAULT_COLORS[0],
+        category: cleanText(source.category, 60)
     };
+}
+
+// Garantisce che la categoria usata da un collegamento esista nella tabella categories
+async function ensureCategory(name) {
+    if (!name) return;
+    const existing = await dbGet("SELECT id FROM categories WHERE name = ?", [name]);
+    if (existing) return;
+    const countRow = await dbGet("SELECT COUNT(*) AS count FROM categories");
+    const color = DEFAULT_COLORS[(countRow ? countRow.count : 0) % DEFAULT_COLORS.length];
+    await dbRun("INSERT OR IGNORE INTO categories (name, color) VALUES (?, ?)", [name, color]);
 }
 
 // API: Elenco collegamenti
 app.get('/api/links', async (req, res) => {
     try {
-        const rows = await dbAll("SELECT id, name, url, icon, color, position FROM links ORDER BY position ASC, name COLLATE NOCASE ASC");
+        const rows = await dbAll("SELECT id, name, url, icon, color, COALESCE(category, '') AS category, position FROM links ORDER BY position ASC, name COLLATE NOCASE ASC");
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -493,9 +519,10 @@ app.post('/api/links', async (req, res) => {
         const row = await dbGet("SELECT COALESCE(MAX(position), -1) + 1 AS nextPos FROM links");
         const nextPos = row ? row.nextPos : 0;
         const result = await dbRun(
-            "INSERT INTO links (name, url, icon, color, position) VALUES (?, ?, ?, ?, ?)",
-            [link.name, link.url, link.icon, link.color, nextPos]
+            "INSERT INTO links (name, url, icon, color, category, position) VALUES (?, ?, ?, ?, ?, ?)",
+            [link.name, link.url, link.icon, link.color, link.category, nextPos]
         );
+        await ensureCategory(link.category);
         res.json({ id: result.lastID, ...link, position: nextPos });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -509,10 +536,11 @@ app.put('/api/links/:id', async (req, res) => {
     if (!isHttpUrl(link.url)) return res.status(400).json({ error: "URL del collegamento non valido" });
     try {
         const result = await dbRun(
-            "UPDATE links SET name = ?, url = ?, icon = ?, color = ? WHERE id = ?",
-            [link.name, link.url, link.icon, link.color, req.params.id]
+            "UPDATE links SET name = ?, url = ?, icon = ?, color = ?, category = ? WHERE id = ?",
+            [link.name, link.url, link.icon, link.color, link.category, req.params.id]
         );
         if (!result.changes) return res.status(404).json({ error: "Collegamento non trovato" });
+        await ensureCategory(link.category);
         res.json({ updated: result.changes });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -620,7 +648,7 @@ app.get('/api/backup', async (req, res) => {
             dbAll("SELECT id, name, color FROM categories ORDER BY id ASC"),
             dbAll("SELECT id, name FROM domains ORDER BY id ASC"),
             dbAll("SELECT id, name, url, logo, icon, icon_color, category, position FROM services ORDER BY position ASC, id ASC"),
-            dbAll("SELECT id, name, url, icon, color, position FROM links ORDER BY position ASC, id ASC")
+            dbAll("SELECT id, name, url, icon, color, category, position FROM links ORDER BY position ASC, id ASC")
         ]);
         res.setHeader('Cache-Control', 'no-store');
         res.json({
@@ -685,6 +713,7 @@ app.post('/api/restore', async (req, res) => {
             url: normalizeUrl(l && l.url),
             icon: cleanText(l && l.icon, 120),
             color: HEX_COLOR.test(String((l && l.color) || '')) ? String(l.color) : DEFAULT_COLORS[index % DEFAULT_COLORS.length],
+            category: cleanText(l && l.category, 60),
             position: Number.isFinite(l && l.position) ? Math.trunc(l.position) : index
         }))
         .filter(l => l.name && isHttpUrl(l.url));
@@ -739,16 +768,18 @@ app.post('/api/restore', async (req, res) => {
                 if (exists) continue;
             }
             const result = await dbRun(
-                'INSERT INTO links (name, url, icon, color, position) VALUES (?, ?, ?, ?, ?)',
-                [l.name, l.url, l.icon, l.color, mode === 'replace' ? l.position : nextLinkPosition++]
+                'INSERT INTO links (name, url, icon, color, category, position) VALUES (?, ?, ?, ?, ?, ?)',
+                [l.name, l.url, l.icon, l.color, l.category, mode === 'replace' ? l.position : nextLinkPosition++]
             );
             imported.links += result.changes;
         }
 
-        // Ogni categoria usata da un servizio deve esistere nella tabella categories
-        const usedCategories = await dbAll(
-            "SELECT DISTINCT TRIM(category) AS name FROM services WHERE category IS NOT NULL AND TRIM(category) != ''"
-        );
+        // Ogni categoria usata da un servizio o da un collegamento deve esistere in categories
+        const usedCategories = await dbAll(`
+            SELECT DISTINCT TRIM(category) AS name FROM services WHERE category IS NOT NULL AND TRIM(category) != ''
+            UNION
+            SELECT DISTINCT TRIM(category) AS name FROM links WHERE category IS NOT NULL AND TRIM(category) != ''
+        `);
         for (let i = 0; i < usedCategories.length; i++) {
             await dbRun('INSERT OR IGNORE INTO categories (name, color) VALUES (?, ?)', [
                 usedCategories[i].name,

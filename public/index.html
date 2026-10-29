@@ -421,7 +421,7 @@
                 </button>
             </div>
 
-            <div id="linksGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"></div>
+            <div id="linksGrid" class="space-y-10"></div>
 
             <div id="linksNoResults" class="hidden text-center py-16 text-gray-400">
                 <i class="fa-solid fa-link-slash text-4xl mb-3 opacity-40"></i>
@@ -460,7 +460,7 @@
                     <i class="fa-solid fa-plus"></i> Nuova Categoria
                 </button>
             </div>
-            <div id="categoriesList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+            <div id="categoriesList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 items-start"></div>
 
             <div class="flex flex-wrap items-center justify-between gap-3 mb-3 mt-10">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-indigo-400">
@@ -472,7 +472,7 @@
                 </button>
             </div>
             <p class="text-xs text-gray-400 mb-4">Sono i domini disponibili nella tendina quando crei o modifichi un servizio.</p>
-            <div id="domainsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+            <div id="domainsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 items-start"></div>
 
             <div class="mt-10 glass-card no-accent rounded-2xl p-5">
                 <div class="flex flex-wrap items-center justify-between gap-4">
@@ -645,6 +645,12 @@
                     <p class="text-[11px] text-gray-500 mt-1">Se ometti il protocollo viene aggiunto https://</p>
                 </div>
                 <div>
+                    <label for="linkCategoryInput" class="block text-xs font-semibold text-gray-400 mb-1">CATEGORIA</label>
+                    <select id="linkCategoryInput"
+                        class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"></select>
+                    <p class="text-[11px] text-gray-500 mt-1">Le categorie sono le stesse della dashboard</p>
+                </div>
+                <div>
                     <label for="linkIconInput" class="block text-xs font-semibold text-gray-400 mb-1">ICONA</label>
                     <input type="text" id="linkIconInput" placeholder="fa-solid fa-book"
                         class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
@@ -724,7 +730,8 @@
         // --- Preferenze persistenti (localStorage, con fallback silenzioso) ---
         const PREF_KEYS = {
             grouping: 'ghibiri.grouping',
-            collapsedSections: 'ghibiri.collapsedSections'
+            collapsedSections: 'ghibiri.collapsedSections',
+            collapsedLinkSections: 'ghibiri.collapsedLinkSections'
         };
 
         function readPref(key, fallback) {
@@ -761,7 +768,8 @@
 
         // Card espanse (persistono tra i re-render)
         const expandedCategories = new Set();
-        const expandedDomains = new Set();
+        // Le card dei domini hanno un unico stato condiviso: si aprono e chiudono insieme
+        let domainsExpanded = false;
 
         // Sezioni della dashboard compresse, per nome categoria (persistono tra i re-render e tra le sessioni)
         const storedCollapsedSections = readPref(PREF_KEYS.collapsedSections, []);
@@ -772,6 +780,17 @@
 
         function persistCollapsedSections() {
             writePref(PREF_KEYS.collapsedSections, [...collapsedSections]);
+        }
+
+        // Sezioni dei collegamenti compresse, per nome categoria
+        const storedCollapsedLinkSections = readPref(PREF_KEYS.collapsedLinkSections, []);
+        const collapsedLinkSections = new Set(
+            Array.isArray(storedCollapsedLinkSections) ? storedCollapsedLinkSections.filter(n => typeof n === 'string') : []
+        );
+        let linkSectionSeq = 0;
+
+        function persistCollapsedLinkSections() {
+            writePref(PREF_KEYS.collapsedLinkSections, [...collapsedLinkSections]);
         }
 
         // --- Toast (sostituiscono gli alert) ---
@@ -1305,7 +1324,7 @@
                             </span>
                             <div class="min-w-0">
                                 <h3 class="text-sm font-semibold text-white truncate">${escapeHtml(c.name)}</h3>
-                                <p class="text-xs text-gray-400">${c.count} ${c.count === 1 ? 'servizio' : 'servizi'} · ${domainList.length} ${domainList.length === 1 ? 'dominio' : 'domini'}</p>
+                                <p class="text-xs text-gray-400">${c.count} ${c.count === 1 ? 'servizio' : 'servizi'}${(c.link_count || 0) > 0 ? ` · ${c.link_count} ${c.link_count === 1 ? 'collegamento' : 'collegamenti'}` : ''} · ${domainList.length} ${domainList.length === 1 ? 'dominio' : 'domini'}</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-1 shrink-0">
@@ -1360,7 +1379,7 @@
 
             domains.forEach(d => {
                 const items = services.filter(s => serviceDomain(s) === d.name);
-                const open = expandedDomains.has(d.id);
+                const open = domainsExpanded;
 
                 const card = document.createElement('div');
                 card.className = 'expand-card glass-card rounded-2xl overflow-hidden no-accent';
@@ -1454,19 +1473,91 @@
             const filtered = links.filter(link => {
                 if (!query) return true;
                 return String(link.name || '').toLowerCase().includes(query)
-                    || String(link.url || '').toLowerCase().includes(query);
+                    || String(link.url || '').toLowerCase().includes(query)
+                    || String(link.category || '').toLowerCase().includes(query);
             });
 
             document.getElementById('linksEmpty').classList.toggle('hidden', hasData);
             document.getElementById('linksNoResults').classList.toggle('hidden', !hasData || filtered.length > 0);
 
-            filtered.forEach(link => grid.appendChild(createLinkCard(link)));
+            const groups = new Map();
+            filtered.forEach(link => {
+                const key = linkCategory(link);
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key).push(link);
+            });
+
+            [...groups.keys()]
+                .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+                .forEach(key => {
+                    const list = groups.get(key).sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+                    grid.appendChild(buildLinkSection(key, list));
+                });
+        }
+
+        function buildLinkSection(name, list) {
+            const color = name === UNCATEGORIZED ? UNCATEGORIZED_COLOR : categoryColor(name);
+            const collapsed = collapsedLinkSections.has(name);
+            const bodyId = 'linkSectionBody' + (++linkSectionSeq);
+
+            const section = document.createElement('section');
+            const heading = document.createElement('h2');
+            heading.className = 'mb-4';
+
+            const header = document.createElement('button');
+            header.type = 'button';
+            header.className = 'flex items-center gap-2 w-full text-left';
+            header.setAttribute('aria-expanded', String(!collapsed));
+            header.setAttribute('aria-controls', bodyId);
+            header.title = collapsed ? 'Espandi sezione' : 'Comprimi sezione';
+            header.innerHTML = `
+                <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color:${color}"></span>
+                <span class="text-sm font-bold uppercase tracking-widest" style="color:${color}">${escapeHtml(name)}</span>
+                <span class="text-[11px] font-semibold text-gray-400 bg-white/5 px-2 py-0.5 rounded-full">${list.length}</span>
+                <i class="chev fa-solid fa-chevron-down text-[11px] text-gray-500 ml-auto mr-1 transition-transform duration-300 ${collapsed ? '' : 'rotate-180'}"></i>
+            `;
+            header.addEventListener('click', () => toggleLinkSection(name, header));
+            heading.appendChild(header);
+
+            const body = document.createElement('div');
+            body.id = bodyId;
+            body.className = (collapsed ? 'hidden ' : '') + 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5';
+            list.forEach(link => body.appendChild(createLinkCard(link)));
+
+            section.appendChild(heading);
+            section.appendChild(body);
+            return section;
+        }
+
+        function toggleLinkSection(name, header) {
+            const body = document.getElementById(header.getAttribute('aria-controls'));
+            if (!body) return;
+            const isCollapsed = body.classList.toggle('hidden');
+            header.setAttribute('aria-expanded', String(!isCollapsed));
+            header.title = isCollapsed ? 'Espandi sezione' : 'Comprimi sezione';
+            header.querySelector('.chev').classList.toggle('rotate-180', !isCollapsed);
+            if (isCollapsed) {
+                collapsedLinkSections.add(name);
+            } else {
+                collapsedLinkSections.delete(name);
+                body.classList.remove('fade-in');
+                void body.offsetWidth;
+                body.classList.add('fade-in');
+            }
+            persistCollapsedLinkSections();
+        }
+
+        // Categoria effettiva di un collegamento (o "Senza categoria")
+        function linkCategory(link) {
+            return (link.category && String(link.category).trim()) ? String(link.category).trim() : UNCATEGORIZED;
         }
 
         function createLinkCard(link) {
             const color = (link.color && String(link.color).trim()) ? String(link.color).trim() : PALETTE[0];
             const iconClass = (link.icon && String(link.icon).trim()) ? String(link.icon).trim() : '';
             const host = linkHost(link.url);
+            const cat = linkCategory(link);
+            const catColor = cat === UNCATEGORIZED ? UNCATEGORIZED_COLOR : categoryColor(cat);
 
             const card = document.createElement('div');
             card.className = 'glass-card rounded-2xl p-5 group cursor-pointer flex flex-col gap-3';
@@ -1502,6 +1593,9 @@
                         <span>${escapeHtml(host)}</span>
                         <i class="fa-solid fa-arrow-up-right-from-square text-[9px] ml-1 opacity-60"></i>
                     </p>
+                    ${cat !== UNCATEGORIZED
+                        ? `<span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border inline-block mt-2" style="color:${catColor}; background-color:${hexToRgba(catColor, 0.1)}; border-color:${hexToRgba(catColor, 0.3)}">${escapeHtml(cat)}</span>`
+                        : ''}
                 </div>
             `;
 
@@ -1534,6 +1628,33 @@
             });
         }
 
+        function populateLinkCategorySelect(selected) {
+            const sel = document.getElementById('linkCategoryInput');
+            if (!sel) return;
+            sel.innerHTML = '';
+
+            const none = document.createElement('option');
+            none.value = '';
+            none.textContent = '— nessuna categoria —';
+            sel.appendChild(none);
+
+            const data = [...categories].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+            data.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                opt.textContent = c.name;
+                if (c.name === selected) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            if (selected && !data.some(c => c.name === selected)) {
+                const opt = document.createElement('option');
+                opt.value = selected;
+                opt.textContent = selected;
+                opt.selected = true;
+                sel.appendChild(opt);
+            }
+        }
+
         function openLinkModal(id = null) {
             rememberFocus();
             const link = id ? links.find(l => l.id === id) : null;
@@ -1545,6 +1666,7 @@
             document.getElementById('linkModalTitle').textContent = link ? 'Modifica collegamento' : 'Nuovo collegamento';
             linkColor = (link && link.color) ? link.color : PALETTE[0];
             renderLinkColorPalette();
+            populateLinkCategorySelect(link ? link.category : '');
             document.getElementById('linkModal').classList.remove('hidden');
             document.getElementById('linkNameInput').focus();
         }
@@ -1560,6 +1682,7 @@
             const name = document.getElementById('linkNameInput').value.trim();
             const url = normalizeUrlValue(document.getElementById('linkUrlInput').value);
             const icon = document.getElementById('linkIconInput').value.trim();
+            const category = document.getElementById('linkCategoryInput').value;
             if (!name || !url) {
                 toast('Inserisci nome e URL del collegamento', 'error');
                 return;
@@ -1568,7 +1691,7 @@
             const res = await fetch(id ? `/api/links/${id}` : '/api/links', {
                 method: id ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, url, icon, color: linkColor })
+                body: JSON.stringify({ name, url, icon, color: linkColor, category })
             });
 
             if (!res.ok) {
@@ -1605,7 +1728,22 @@
         }
 
         function toggleCategory(id, el) { toggleCard(id, el, expandedCategories); }
-        function toggleDomain(id, el) { toggleCard(id, el, expandedDomains); }
+
+        // Le card dei domini condividono un solo stato: aprendone una si aprono tutte,
+        // così le liste di tutti i domini sono visibili nello stesso momento.
+        function toggleDomain(id, el) {
+            const card = el.closest('.expand-card');
+            const body = card ? card.querySelector('.collapsible') : null;
+            const open = body ? !body.classList.contains('open') : !domainsExpanded;
+            domainsExpanded = open;
+
+            document.querySelectorAll('#domainsList .expand-card').forEach(item => {
+                const itemBody = item.querySelector('.collapsible');
+                const chev = item.querySelector('.chev');
+                if (itemBody) itemBody.classList.toggle('open', open);
+                if (chev) chev.classList.toggle('rotate-180', open);
+            });
+        }
 
         function openCategoryModal(id = null) {
             rememberFocus();

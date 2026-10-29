@@ -57,14 +57,14 @@ Card con pallino di stato live, categorie colorate, domini riutilizzabili e acce
 | 🟢 | **Stato live** | Un pallino su ogni card: verde se il servizio risponde, rosso se è irraggiungibile. |
 | ⏱️ | **Aggiornamento automatico** | Gli stati si ricontrollano ogni 60 secondi con **una sola richiesta** (`/api/status`), in pausa quando la tab non è visibile. |
 | 🔐 | **Login con PIN** | Accesso protetto da un PIN a 4 cifre, configurabile via variabile d'ambiente. |
-| 🗂️ | **Categorie e domini** | Pagina dedicata per gestire le categorie (nome + colore) e i domini usati negli URL. |
-| 🔗 | **Collegamenti** | Vista per i siti esterni: ricerca, favicon automatico, colore per card e copia dell'URL. |
+| 🗂️ | **Categorie e domini** | Pagina dedicata per gestire le categorie (nome + colore) e i domini usati negli URL. Le categorie sono condivise tra servizi e collegamenti. |
+| 🔗 | **Collegamenti** | Vista per i siti esterni: categorie con sezioni comprimibili, ricerca, favicon automatico, colore per card e copia dell'URL. |
 | 🎨 | **Sezioni colorate e comprimibili** | Le card sono raggruppate per categoria; l'intestazione di ogni sezione la comprime e la espande (stato ricordato). |
 | 🖱️ | **Drag & drop** | Trascina le card per riordinarle in ogni sezione: l'ordine viene salvato nel database. |
 | 🌐 | **URL componibili** | Nel form scegli protocollo (https di default), nome, sottodominio e dominio da una tendina. |
 | 🔤 | **Ordinamento A-Z** | Un toggle annulla il raggruppamento e ordina tutti i servizi alfabeticamente. |
 | 🔍 | **Ricerca istantanea** | Filtra per nome o categoria mentre digiti, con contatore dei risultati. |
-| 🧩 | **Dropdown categoria** | Nel form del servizio scegli la categoria da un menu: una sola per servizio. |
+| 🧩 | **Dropdown categoria** | Nel form del servizio scegli la categoria da un menu: una sola per servizio. Vale anche per i collegamenti. |
 | 🖼️ | **Logo automatici** | Compatibile con [dashboard-icons](https://github.com/walkxcode/dashboard-icons), con fallback locale. |
 | 🔔 | **Notifiche toast** | Conferme ed errori appaiono come toast non bloccanti, con `aria-live` per gli screen reader. |
 | 💾 | **Backup JSON** | Esporta e ripristina servizi, categorie, domini e collegamenti dalla vista *Categorie e domini*. |
