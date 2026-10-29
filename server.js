@@ -485,7 +485,9 @@ function linkPayload(body) {
         name: cleanText(source.name, 120),
         url: normalizeUrl(source.url),
         icon: cleanText(source.icon, 120),
-        color: HEX_COLOR.test(String(source.color || '')) ? String(source.color) : DEFAULT_COLORS[0],
+        // Il colore non è più usato dall'interfaccia: le card seguono il colore della categoria.
+        // Il campo resta per compatibilità con backup e client precedenti.
+        color: HEX_COLOR.test(String(source.color || '')) ? String(source.color) : '',
         category: cleanText(source.category, 60)
     };
 }
@@ -712,7 +714,7 @@ app.post('/api/restore', async (req, res) => {
             name: cleanText(l && l.name, 120),
             url: normalizeUrl(l && l.url),
             icon: cleanText(l && l.icon, 120),
-            color: HEX_COLOR.test(String((l && l.color) || '')) ? String(l.color) : DEFAULT_COLORS[index % DEFAULT_COLORS.length],
+            color: HEX_COLOR.test(String((l && l.color) || '')) ? String(l.color) : '',
             category: cleanText(l && l.category, 60),
             position: Number.isFinite(l && l.position) ? Math.trunc(l.position) : index
         }))
