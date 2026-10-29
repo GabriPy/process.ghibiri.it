@@ -55,16 +55,31 @@ Card con pallino di stato live, categorie colorate, domini riutilizzabili e acce
 | | Funzionalità | Descrizione |
 |:--|:--|:--|
 | 🟢 | **Stato live** | Un pallino su ogni card: verde se il servizio risponde, rosso se è irraggiungibile. |
+| ⏱️ | **Aggiornamento automatico** | Gli stati si ricontrollano ogni 60 secondi con **una sola richiesta** (`/api/status`), in pausa quando la tab non è visibile. |
 | 🔐 | **Login con PIN** | Accesso protetto da un PIN a 4 cifre, configurabile via variabile d'ambiente. |
 | 🗂️ | **Categorie e domini** | Pagina dedicata per gestire le categorie (nome + colore) e i domini usati negli URL. |
-| 🎨 | **Sezioni colorate** | Le card sono raggruppate in sezioni per categoria, con bordo, badge e box icona nel colore scelto. |
+| 🔗 | **Collegamenti** | Vista per i siti esterni: ricerca, favicon automatico, colore per card e copia dell'URL. |
+| 🎨 | **Sezioni colorate e comprimibili** | Le card sono raggruppate per categoria; l'intestazione di ogni sezione la comprime e la espande (stato ricordato). |
 | 🖱️ | **Drag & drop** | Trascina le card per riordinarle in ogni sezione: l'ordine viene salvato nel database. |
 | 🌐 | **URL componibili** | Nel form scegli protocollo (https di default), nome, sottodominio e dominio da una tendina. |
 | 🔤 | **Ordinamento A-Z** | Un toggle annulla il raggruppamento e ordina tutti i servizi alfabeticamente. |
-| 🔍 | **Ricerca istantanea** | Filtra per nome o categoria mentre digiti. |
+| 🔍 | **Ricerca istantanea** | Filtra per nome o categoria mentre digiti, con contatore dei risultati. |
 | 🧩 | **Dropdown categoria** | Nel form del servizio scegli la categoria da un menu: una sola per servizio. |
 | 🖼️ | **Logo automatici** | Compatibile con [dashboard-icons](https://github.com/walkxcode/dashboard-icons), con fallback locale. |
+| 🔔 | **Notifiche toast** | Conferme ed errori appaiono come toast non bloccanti, con `aria-live` per gli screen reader. |
+| 💾 | **Backup JSON** | Esporta e ripristina servizi, categorie, domini e collegamenti dalla vista *Categorie e domini*. |
+| 📱 | **Installabile come app** | Web App Manifest e icone: si aggiunge alla home di telefono e desktop come app autonoma. |
 | 🐳 | **Docker-ready** | Un `docker compose up` e sei online, con database persistente su volume. |
+
+### ⌨️ Scorciatoie
+
+| Tasto | Azione |
+|:--|:--|
+| `Ctrl` / `⌘` + `K` | Porta il focus sulla ricerca |
+| `/` | Porta il focus sulla ricerca (fuori dai campi di testo) |
+| `Esc` | Chiude il modale aperto |
+
+L'ordinamento scelto e le sezioni compresse vengono salvati in `localStorage`.
 
 ## 🧱 Stack
 
@@ -89,7 +104,7 @@ flowchart LR
     A -.->|"🟢 🔴"| B
 ```
 
-Il controllo di raggiungibilità avviene **lato server** (endpoint `/api/check`): così si evitano i blocchi CORS del browser e funzionano anche servizi senza header CORS.
+Il controllo di raggiungibilità avviene **lato server** (endpoint `/api/status`): così si evitano i blocchi CORS del browser e funzionano anche servizi senza header CORS. La dashboard invia tutti gli URL in un'unica richiesta, che il server esegue con un massimo di 6 controlli in parallelo e memorizza per 30 secondi.
 
 ## 🐳 Avvio rapido
 
@@ -162,7 +177,14 @@ Richiede Node.js 20+. La cartella `data/` e il DB vengono creati automaticamente
 | `POST` | `/api/domains` | Aggiunge un dominio |
 | `PUT` | `/api/domains/:id` | Rinomina un dominio |
 | `DELETE` | `/api/domains/:id` | Elimina un dominio |
-| `GET` | `/api/check?url=` | Verifica se un servizio è raggiungibile |
+| `GET` | `/api/links` | Elenco dei collegamenti esterni |
+| `POST` | `/api/links` | Aggiunge un collegamento |
+| `PUT` | `/api/links/:id` | Modifica un collegamento |
+| `DELETE` | `/api/links/:id` | Elimina un collegamento |
+| `GET` | `/api/check?url=` | Verifica un singolo servizio (mantenuto per compatibilità) |
+| `POST` | `/api/status` | Verifica più servizi insieme (`{ "urls": [...] }`), con cache di 30 s |
+| `GET` | `/api/backup` | Scarica un backup JSON completo (servizi, categorie, domini, collegamenti) |
+| `POST` | `/api/restore?mode=replace\|merge` | Ripristina un backup: `replace` sostituisce tutto, `merge` aggiunge solo i mancanti |
 
 Tutte le rotte `/api/*` (tranne `auth` e `login`) richiedono il cookie di sessione.
 
@@ -187,13 +209,46 @@ L'interfaccia compone lo stesso URL partendo da protocollo + sottodominio + domi
 
 </details>
 
+## 💾 Backup e ripristino
+
+Dalla vista **Categorie e domini** trovi il riquadro *Backup*: **Esporta** scarica un file `ghibiri-hub-backup-AAAA-MM-GG.json` con tutti i servizi, le categorie, i domini e i collegamenti; **Importa** rilegge quello stesso file.
+
+```bash
+# backup da riga di comando
+curl -b "ghibiri_session=<cookie>" http://localhost:3111/api/backup > backup.json
+
+# ripristino (sostituisce i dati attuali)
+curl -X POST http://localhost:3111/api/restore?mode=replace \
+  -H "Content-Type: application/json" \
+  -b "ghibiri_session=<cookie>" \
+  --data @backup.json
+```
+
+Il ripristino valida i dati (nome obbligatorio, URL `http`/`https`, colori nel formato `#rrggbb`) e gira in una **transazione**: se qualcosa fallisce non viene scritto nulla. In `replace` vengono svuotate solo le sezioni presenti nel file, quindi un backup vecchio (senza `links`) non cancella i collegamenti già salvati. In alternativa al JSON puoi sempre copiare `data/services.db`, che resta la fonte di verità.
+
+## 📱 Installazione come app (PWA)
+
+La dashboard include un [Web App Manifest](public/manifest.webmanifest) e le icone in `public/icons/`, quindi si installa come app autonoma (senza barra degli indirizzi):
+
+| Piattaforma | Come |
+|:--|:--|
+| **Android / Chrome / Edge** | Menu ⋮ → *Installa app* (l'icona automatica in barra degli indirizzi può non comparire senza service worker) |
+| **iOS / Safari** | *Condividi* → *Aggiungi a Home* |
+| **Desktop** | Menu → *Installa* (Chrome/Edge) |
+
+> L'installazione richiede un **contesto sicuro**: HTTPS (es. tunnel Cloudflare) o `localhost`. In HTTP semplice su IP privato il browser non la propone, ma la dashboard resta pienamente utilizzabile.
+>
+> Non c'è un service worker: l'app non funziona offline e ogni avvio carica la versione corrente, così non rischi pagine in cache dopo un aggiornamento. Dal 2023 Chrome non richiede più un `fetch` handler per installare dal menu, anche se il prompt automatico può non apparire ([fonte](https://developer.chrome.com/blog/update-install-criteria)).
+
 ## 📁 Struttura del progetto
 
 ```
 process.ghibiri.it/
-├── server.js              # API Express + SQLite (servizi, categorie, domini, auth PIN, check)
+├── server.js              # API Express + SQLite (servizi, categorie, domini, auth PIN, stato, backup)
 ├── public/
-│   ├── index.html         # Dashboard (viste, drag & drop, modali, login, stato live)
+│   ├── index.html         # Dashboard (viste, drag & drop, modali, login, stato live, backup)
+│   ├── manifest.webmanifest # Manifest PWA (nome, icone, tema)
+│   ├── icons/             # Icone PNG per installazione e iOS
 │   └── default-icon.svg   # Icona di fallback
 ├── data/                  # Volume Docker con services.db (ignorato da git)
 ├── docs/
